@@ -12,7 +12,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（9問）
+# タスク定義（11問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -195,6 +195,31 @@ def safe_sum(a, b):
     return eval(f"{a} + {b}")
 """,
         "criteria": ["eval", "exec"],
+    },
+    {
+        "id": 10,
+        "name": "ユニットテスト自動追加",
+        "type": "documentation",
+        "description": "テストのない関数にユニットテストを追加せよ",
+        "before": """\
+def multiply(a, b):
+    return a * b
+""",
+        "criteria": ["assert", "test_", "unittest"],
+    },
+    {
+        "id": 11,
+        "name": "ログ出力JSON統一",
+        "type": "optimization",
+        "description": "print()によるログ出力をJSON形式またはloggingに統一せよ",
+        "before": """\
+def process(data):
+    print("処理開始")
+    result = data * 2
+    print("処理完了: " + str(result))
+    return result
+""",
+        "criteria": ["json", "logging", "import"],
     },
 ]
 
@@ -624,6 +649,113 @@ def _score_task9_security(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def _score_task10_unittest(after_code: str) -> float:
+    """タスク10: ユニットテスト自動追加 — テスト関数・assert・正常系異常系"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    # 1. unittest または assert が存在する (0.2)
+    has_assert = any(isinstance(node, ast.Assert) for node in ast.walk(tree))
+    has_unittest_import = "import unittest" in after_code
+    # assertEqual等のメソッド呼び出しもassert扱い
+    has_assert_method = any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and node.func.attr.startswith("assert")
+        for node in ast.walk(tree)
+    )
+    if has_assert or has_unittest_import or has_assert_method:
+        score += 0.2
+
+    # 2. test_で始まるテスト関数が存在する (0.25)
+    test_funcs = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.FunctionDef) and node.name.startswith("test_")
+    ]
+    if test_funcs:
+        score += 0.25
+
+    # 3. 元の関数が維持されている (0.1)
+    all_funcs = [node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef)]
+    non_test_funcs = [f for f in all_funcs if not f.name.startswith("test_")]
+    if non_test_funcs:
+        score += 0.1
+
+    # 4. 正常系・異常系のテストケースが含まれる (0.25)
+    # 複数のテスト関数 or 複数のassert = 正常系+異常系
+    assert_count = sum(1 for node in ast.walk(tree) if isinstance(node, ast.Assert))
+    assert_method_count = sum(
+        1 for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and node.func.attr.startswith("assert")
+    )
+    total_assertions = assert_count + assert_method_count
+    if total_assertions >= 3 or len(test_funcs) >= 2:
+        score += 0.25
+    elif total_assertions >= 2:
+        score += 0.15
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task11_json_logging(after_code: str) -> float:
+    """タスク11: ログ出力JSON統一 — print除去・json/logging使用"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    # 1. import json または import logging が存在する (0.25)
+    has_json_import = any(
+        isinstance(node, ast.Import) and any(alias.name == "json" for alias in node.names)
+        for node in ast.walk(tree)
+    ) or any(
+        isinstance(node, ast.ImportFrom) and node.module == "json"
+        for node in ast.walk(tree)
+    )
+    has_logging_import = any(
+        isinstance(node, ast.Import) and any(alias.name == "logging" for alias in node.names)
+        for node in ast.walk(tree)
+    ) or any(
+        isinstance(node, ast.ImportFrom) and node.module == "logging"
+        for node in ast.walk(tree)
+    )
+    if has_json_import or has_logging_import:
+        score += 0.25
+
+    # 2. print()が除去されている (0.3)
+    print_calls = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name)
+        and node.func.id == "print"
+    ]
+    if not print_calls:
+        score += 0.3
+    elif len(print_calls) <= 1:
+        score += 0.1
+
+    # 3. JSON形式の出力またはlogging使用が確認できる (0.25)
+    has_json_dumps = any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "dumps"
+        for node in ast.walk(tree)
+    )
+    has_logging_call = any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and node.func.attr in ("info", "debug", "warning", "error", "critical")
+        for node in ast.walk(tree)
+    )
+    if has_json_dumps or has_logging_call:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
 def score_after(task: dict, after_code: str) -> float:
     """after コードのスコア（0.0〜1.0）— 全タスクAST＋観点別"""
     scorers = {
@@ -636,6 +768,8 @@ def score_after(task: dict, after_code: str) -> float:
         7: lambda code: _score_task7_type_hints(code),
         8: lambda code: _score_task8_function_length(code),
         9: lambda code: _score_task9_security(code),
+        10: lambda code: _score_task10_unittest(code),
+        11: lambda code: _score_task11_json_logging(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
