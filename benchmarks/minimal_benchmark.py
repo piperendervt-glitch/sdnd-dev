@@ -181,7 +181,7 @@ def process_data(data):
     {
         "id": 9,
         "name": "セキュリティ脆弱性修正",
-        "type": "bugfix",
+        "type": "security",
         "description": "eval/execを使った危険なコードを安全な代替実装に修正せよ",
         "before": """\
 def calculate(expression):

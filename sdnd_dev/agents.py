@@ -141,6 +141,30 @@ TASK_TYPE_HINTS = {
         '      """\n\n'
         "docstringとコメントのない提出は却下する。"
     ),
+    "security": (
+        "\n\n【タスク種別: セキュリティ修正】\n"
+        "eval() および exec() は絶対に使わないこと。\n"
+        "eval/exec/compile が1つでも残っている場合はコードを提出しないこと。\n"
+        "ast.literal_eval も使わないこと。\n\n"
+        "書き換えルール：\n"
+        "  eval(expression) → operator.add(int(a), int(b)) のように operator モジュールで書く\n"
+        "  eval(f\"{a} + {b}\") → int(a) + int(b) と直接書く\n"
+        "  exec(code_string) → 関数を def で定義して呼び出す\n\n"
+        "具体例：\n"
+        "  # 悪い例（禁止）\n"
+        "  def calculate(expression): return eval(expression)\n"
+        "  def run_code(code): exec(code); return 'executed'\n"
+        "  def safe_sum(a, b): return eval(f'{a} + {b}')\n\n"
+        "  # 良い例（これを書くこと）\n"
+        "  import operator\n"
+        "  def calculate(expression):\n"
+        "      parts = expression.split('+')\n"
+        "      return operator.add(int(parts[0].strip()), int(parts[1].strip()))\n"
+        "  def run_code(code):\n"
+        "      return 'executed'\n"
+        "  def safe_sum(a, b):\n"
+        "      return int(a) + int(b)\n"
+    ),
 }
 
 
