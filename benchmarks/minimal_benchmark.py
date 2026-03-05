@@ -13,7 +13,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（14問）
+# タスク定義（15問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -235,6 +235,20 @@ def setup_logger():
     return logger
 """,
         "criteria": ["setLevel", "logging"],
+    },
+    {
+        "id": 15,
+        "name": "クラスを関数に分割",
+        "type": "optimization",
+        "description": "クラスを廃止して独立した関数に分割せよ。docstringも追加すること",
+        "before": """\
+class Calculator:
+    def add(self, a, b):
+        return a + b
+    def multiply(self, a, b):
+        return a * b
+""",
+        "criteria": ["def", "return"],
     },
     {
         "id": 14,
@@ -932,6 +946,38 @@ def _score_task14_config_parse(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def _score_task15_class_to_functions(after_code: str) -> float:
+    """タスク15(T13): クラスを関数に分割 — ClassDef除去・FunctionDef2個以上・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    # 1. ClassDefが存在しない (0.3)
+    has_class = any(isinstance(node, ast.ClassDef) for node in ast.walk(tree))
+    if not has_class:
+        score += 0.3
+
+    # 2. トップレベルのFunctionDefが2個以上 (0.25)
+    top_funcs = [node for node in ast.iter_child_nodes(tree) if isinstance(node, ast.FunctionDef)]
+    if len(top_funcs) >= 2:
+        score += 0.25
+    elif len(top_funcs) >= 1:
+        score += 0.1
+
+    # 3. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
 def _score_task13_unused_imports(after_code: str) -> float:
     """タスク13(T16): import文整理 — 未使用importが除去されているか"""
     score = 0.0
@@ -1012,6 +1058,7 @@ def score_after(task: dict, after_code: str) -> float:
         12: lambda code: _score_task12_log_level(code),
         13: lambda code: _score_task13_unused_imports(code),
         14: lambda code: _score_task14_config_parse(code),
+        15: lambda code: _score_task15_class_to_functions(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
