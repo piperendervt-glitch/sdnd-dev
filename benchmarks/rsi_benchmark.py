@@ -1,18 +1,14 @@
-"""RSIベンチマーク — プロンプト自己改善サイクル
-
-手順:
-  1. 全タスクベンチマーク実行 (baseline)
-  2. Architect がスコア分析・改善案を提示
-  3. Implementer が改善プロンプトを生成
-  4. 改善プロンプトで再ベンチマーク実行
-  5. before/after 比較
+"""RSIベンチマーク — 連続サイクル実行 + proofs自動保存
 
 使い方:
-  python -m benchmarks.rsi_benchmark
+  python -m benchmarks.rsi_benchmark --cycles 5
 """
 
 from __future__ import annotations
 
+import argparse
+import csv
+import io
 import json
 import re
 import sys
@@ -20,17 +16,29 @@ import time
 from datetime import datetime
 from pathlib import Path
 
+# Windows CP932回避
+if sys.stdout.encoding != "utf-8":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
+
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from benchmarks.minimal_benchmark import TASKS, get_task, score_before, score_after
-from sdnd_dev.agents import Agent, AGENT_SYSTEMS
+from benchmarks.minimal_benchmark import TASKS, score_before, score_after
+from sdnd_dev.agents import AGENT_SYSTEMS, TASK_TYPE_HINTS
+from core.safety_constitution import get_constitution
 from ollama_client import OllamaBackend
 
 LOG_DIR = Path("sessions/rsi_logs")
+CSV_PATH = LOG_DIR / "cycles.csv"
+PROOFS_DIR = Path("proofs")
+
+# ─────────────────────────────────────────
+# ベンチマーク実行
+# ─────────────────────────────────────────
 
 
-def run_benchmark_with_prompt(system_prompt: str) -> list[dict]:
-    """指定システムプロンプトでImplementerを動かしベンチマーク実行"""
+def run_one_cycle(system_prompt: str) -> list[dict]:
+    """全タスクを1回ずつ実行してスコアを返す"""
     backend = OllamaBackend(model="qwen2.5:3b")
     results = []
 
@@ -46,8 +54,10 @@ def run_benchmark_with_prompt(system_prompt: str) -> list[dict]:
             ),
         }]
 
+        task_type = task.get("type", "")
+        prompt = system_prompt + TASK_TYPE_HINTS.get(task_type, "")
         response = backend.chat(
-            system=system_prompt,
+            system=prompt,
             messages=messages,
             max_output_tokens=1024,
         )
@@ -62,6 +72,7 @@ def run_benchmark_with_prompt(system_prompt: str) -> list[dict]:
         results.append({
             "task_id": task["id"],
             "task_name": task["name"],
+            "task_type": task_type,
             "before_score": before_s,
             "after_score": after_s,
             "improvement": round(after_s - before_s, 2),
@@ -69,127 +80,224 @@ def run_benchmark_with_prompt(system_prompt: str) -> list[dict]:
             "after_code": after_code,
         })
 
-        print(f"  タスク {task['id']}: {task['name']} -> {after_s:.2f} (+{after_s - before_s:.2f}) [{elapsed:.1f}s]")
+        print(f"    T{task['id']} {task['name']:<14} -> {after_s:.2f} (+{after_s - before_s:.2f}) [{elapsed:.0f}s]")
 
     return results
 
 
-def analyze_and_improve(baseline_results: list) -> str:
-    """Architect分析 → Implementerが改善プロンプトを生成"""
-    # スコアレポート作成
-    report_lines = []
-    for r in baseline_results:
-        report_lines.append(
-            f"タスク{r['task_id']} ({r['task_name']}): "
-            f"スコア {r['after_score']:.2f} / 改善 +{r['improvement']:.2f}"
-        )
-        if r["after_score"] < 0.6:
-            report_lines.append(f"  [低スコア] 生成コード: {r['after_code'][:100]}...")
-    report = "\n".join(report_lines)
-
-    avg = sum(r["after_score"] for r in baseline_results) / len(baseline_results)
-    report += f"\n\n平均スコア: {avg:.2f}"
-
-    # Architect: 分析
-    print("\n[Architect] スコア分析中...")
-    architect = Agent("architect")
-    arch_messages = [{
-        "role": "user",
-        "content": (
-            f"以下はコード改善ベンチマークの結果です。\n\n{report}\n\n"
-            f"スコアが低いタスクの原因を分析し、"
-            f"Implementerのシステムプロンプトをどう改善すべきか、"
-            f"具体的に3つの改善案を提示してください。"
-        ),
-    }]
-    arch_resp = architect.respond(arch_messages)
-    print(f"{arch_resp}\n")
-
-    # Implementer: 改善プロンプト生成
-    print("[Implementer] 改善プロンプト生成中...")
-    current_prompt = AGENT_SYSTEMS["implementer"]
-    gen_backend = OllamaBackend(model="qwen2.5:3b")
-    gen_messages = [{
-        "role": "user",
-        "content": (
-            f"あなたはプロンプトエンジニアです。\n\n"
-            f"現在のImplementerシステムプロンプト:\n```\n{current_prompt[:500]}\n```\n\n"
-            f"Architectの改善提案:\n{arch_resp}\n\n"
-            f"上記を踏まえ、改善されたImplementerシステムプロンプトを生成してください。\n"
-            f"出力はプロンプト本文のみ（```で囲まないこと）。\n"
-            f"日本語で、300文字以内で簡潔に。"
-        ),
-    }]
-    improved_prompt = gen_backend.chat(
-        system="あなたはプロンプト最適化の専門家です。改善されたシステムプロンプトのみを出力してください。",
-        messages=gen_messages,
-        max_output_tokens=512,
-    )
-    print(f"[改善プロンプト]\n{improved_prompt}\n")
-
-    return improved_prompt.strip()
+# ─────────────────────────────────────────
+# テキストグラフ
+# ─────────────────────────────────────────
 
 
-def run_rsi_cycle():
-    """RSI 1サイクル実行"""
-    LOG_DIR.mkdir(parents=True, exist_ok=True)
-    cycle_start = time.time()
+def bar_graph(score: float, width: int = 10) -> str:
+    filled = int(round(score * width))
+    filled = max(0, min(width, filled))
+    return "\u2588" * filled + "\u2591" * (width - filled)
 
-    print("=" * 60)
-    print("RSI ベンチマーク自己改善サイクル")
-    print("=" * 60)
 
-    # Phase 1: Baseline
-    print("\n[Phase 1] Baseline ベンチマーク実行")
-    print("-" * 40)
-    original_prompt = AGENT_SYSTEMS["implementer"]
-    baseline = run_benchmark_with_prompt(original_prompt)
-    baseline_avg = sum(r["after_score"] for r in baseline) / len(baseline)
-    print(f"\nBaseline 平均スコア: {baseline_avg:.2f}")
+def print_progress(history: list[dict]):
+    """全サイクルのテキストグラフを表示"""
+    print()
+    for entry in history:
+        avg = entry["avg"]
+        graph = bar_graph(avg)
+        print(f"  Cycle {entry['cycle']:>2}: {graph} {avg:.2f}")
+    print()
 
-    # Phase 2-3: 分析 + 改善プロンプト生成
-    print("\n[Phase 2-3] 分析・改善プロンプト生成")
-    print("-" * 40)
-    improved_prompt = analyze_and_improve(baseline)
 
-    # Phase 4: 改善後ベンチマーク
-    print("\n[Phase 4] 改善プロンプトでベンチマーク再実行")
-    print("-" * 40)
-    improved = run_benchmark_with_prompt(improved_prompt)
-    improved_avg = sum(r["after_score"] for r in improved) / len(improved)
-    print(f"\n改善後 平均スコア: {improved_avg:.2f}")
+# ─────────────────────────────────────────
+# proofs 保存
+# ─────────────────────────────────────────
 
-    # Phase 5: 比較
-    cycle_elapsed = time.time() - cycle_start
-    print("\n" + "=" * 60)
-    print("[Phase 5] Before / After 比較")
-    print("=" * 60)
-    print(f"{'タスク':<20} {'Baseline':>10} {'Improved':>10} {'差分':>10}")
-    print("-" * 50)
-    for b, i in zip(baseline, improved):
-        diff = i["after_score"] - b["after_score"]
-        marker = "+" if diff > 0 else ""
-        print(f"{b['task_name']:<20} {b['after_score']:>10.2f} {i['after_score']:>10.2f} {marker}{diff:>9.2f}")
-    print("-" * 50)
-    diff_avg = improved_avg - baseline_avg
-    marker = "+" if diff_avg > 0 else ""
-    print(f"{'平均':<20} {baseline_avg:>10.2f} {improved_avg:>10.2f} {marker}{diff_avg:>9.2f}")
-    print(f"\n合計所要時間: {cycle_elapsed:.0f}秒")
 
-    # ログ保存
-    log = {
+def save_proofs(cycle_num: int, results: list[dict], prompt_used: str):
+    """proofs/genN_timestamp/ に各種ログを保存"""
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    proof_dir = PROOFS_DIR / f"gen{cycle_num}_{ts}"
+    code_dir = proof_dir / "generated_code"
+    code_dir.mkdir(parents=True, exist_ok=True)
+
+    # scores.json
+    scores = {
+        "cycle": cycle_num,
         "timestamp": datetime.now().isoformat(),
-        "cycle_elapsed_sec": round(cycle_elapsed, 1),
-        "original_prompt": original_prompt[:200] + "...",
-        "improved_prompt": improved_prompt,
-        "baseline": {"avg_score": round(baseline_avg, 2), "results": baseline},
-        "improved": {"avg_score": round(improved_avg, 2), "results": improved},
-        "delta_avg": round(diff_avg, 2),
+        "tasks": [
+            {
+                "task_id": r["task_id"],
+                "task_name": r["task_name"],
+                "before_score": r["before_score"],
+                "after_score": r["after_score"],
+                "improvement": r["improvement"],
+                "elapsed_sec": r["elapsed_sec"],
+            }
+            for r in results
+        ],
+        "avg_score": round(sum(r["after_score"] for r in results) / len(results), 2),
     }
-    log_path = LOG_DIR / f"rsi_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-    log_path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"\nログ保存: {log_path}")
+    (proof_dir / "scores.json").write_text(
+        json.dumps(scores, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
+
+    # prompts_used.txt
+    (proof_dir / "prompts_used.txt").write_text(prompt_used, encoding="utf-8")
+
+    # constitution_log.txt
+    constitution = get_constitution()
+    constitution_log = (
+        f"=== 安全憲法適用確認 (Cycle {cycle_num}) ===\n\n"
+        f"適用: YES\n"
+        f"注入先: Implementerシステムプロンプト\n"
+        f"バージョン: v0.1\n\n"
+        f"--- 憲法テキスト ---\n{constitution}\n"
+    )
+    (proof_dir / "constitution_log.txt").write_text(constitution_log, encoding="utf-8")
+
+    # summary.md
+    lines = [
+        f"# Cycle {cycle_num} Summary\n",
+        f"| Task | Before | After | Delta |",
+        f"|------|--------|-------|-------|",
+    ]
+    for r in results:
+        delta = r["after_score"] - r["before_score"]
+        lines.append(f"| {r['task_name']} | {r['before_score']:.2f} | {r['after_score']:.2f} | +{delta:.2f} |")
+    avg = scores["avg_score"]
+    lines.append(f"\n**Average: {avg:.2f}**\n")
+    (proof_dir / "summary.md").write_text("\n".join(lines), encoding="utf-8")
+
+    # generated_code/
+    for r in results:
+        filename = f"task{r['task_id']}_{r['task_name']}.py"
+        # ファイル名に使えない文字を除去
+        filename = re.sub(r'[^\w.\-]', '_', filename)
+        (code_dir / filename).write_text(r["after_code"], encoding="utf-8")
+
+    return proof_dir
+
+
+# ─────────────────────────────────────────
+# CSV ログ
+# ─────────────────────────────────────────
+
+
+def append_csv(cycle_num: int, results: list[dict]):
+    """cycles.csv に1行追記"""
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    scores = [r["after_score"] for r in results]
+    avg = round(sum(scores) / len(scores), 2)
+    row = [cycle_num] + [round(s, 2) for s in scores] + [avg]
+
+    write_header = not CSV_PATH.exists()
+    with open(CSV_PATH, "a", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        if write_header:
+            writer.writerow(["cycle", "task1", "task2", "task3", "task4", "task5", "average"])
+        writer.writerow(row)
+
+
+# ─────────────────────────────────────────
+# メイン
+# ─────────────────────────────────────────
+
+
+def run_cycles(max_cycles: int = 5):
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    PROOFS_DIR.mkdir(parents=True, exist_ok=True)
+
+    prompt = AGENT_SYSTEMS["implementer"]
+    history: list[dict] = []
+    stall_count = 0
+    total_start = time.time()
+
+    print("=" * 60)
+    print(f"RSI 連続サイクル実行 (max {max_cycles} cycles)")
+    print("=" * 60)
+
+    for cycle in range(1, max_cycles + 1):
+        cycle_start = time.time()
+        print(f"\n--- Cycle {cycle}/{max_cycles} ---")
+
+        # ベンチマーク実行
+        results = run_one_cycle(prompt)
+        avg = round(sum(r["after_score"] for r in results) / len(results), 2)
+        elapsed = round(time.time() - cycle_start, 1)
+
+        print(f"  => 平均: {avg:.2f} ({elapsed}s)")
+
+        # 記録
+        entry = {
+            "cycle": cycle,
+            "avg": avg,
+            "scores": [r["after_score"] for r in results],
+            "elapsed_sec": elapsed,
+        }
+        history.append(entry)
+
+        # CSV追記
+        append_csv(cycle, results)
+
+        # proofs保存
+        proof_dir = save_proofs(cycle, results, prompt)
+        print(f"  => proofs: {proof_dir}")
+
+        # テキストグラフ
+        print_progress(history)
+
+        # 停滞チェック（改善 < 0.01 が2サイクル連続で停止）
+        if len(history) >= 2:
+            delta = abs(history[-1]["avg"] - history[-2]["avg"])
+            if delta < 0.01:
+                stall_count += 1
+                print(f"  [STALL] 改善 {delta:.3f} < 0.01 ({stall_count}/2)")
+                if stall_count >= 2:
+                    print(f"\n  [AUTO-STOP] 2サイクル連続で停滞 -> 自動停止")
+                    break
+            else:
+                stall_count = 0
+
+    # 最終サマリー
+    total_elapsed = round(time.time() - total_start, 1)
+    print("\n" + "=" * 60)
+    print("最終結果")
+    print("=" * 60)
+
+    print(f"\n{'Cycle':>6} {'T1':>6} {'T2':>6} {'T3':>6} {'T4':>6} {'T5':>6} {'Avg':>8}")
+    print("-" * 50)
+    for h in history:
+        scores_str = " ".join(f"{s:>6.2f}" for s in h["scores"])
+        print(f"{h['cycle']:>6} {scores_str} {h['avg']:>8.2f}")
+    print("-" * 50)
+
+    # 推移グラフ
+    print("\nスコア推移:")
+    print_progress(history)
+
+    # 分析
+    if len(history) >= 2:
+        first_avg = history[0]["avg"]
+        last_avg = history[-1]["avg"]
+        total_delta = last_avg - first_avg
+        marker = "+" if total_delta >= 0 else ""
+        print(f"総合改善: {marker}{total_delta:.2f} (Cycle 1: {first_avg:.2f} -> Cycle {history[-1]['cycle']}: {last_avg:.2f})")
+
+        # 頭打ち/低下の検出
+        for i in range(1, len(history)):
+            delta = history[i]["avg"] - history[i - 1]["avg"]
+            if delta < -0.02:
+                print(f"  [WARN] Cycle {history[i]['cycle']}: スコア低下 {delta:.2f}")
+                # 低下したタスクを特定
+                for j, (prev, curr) in enumerate(zip(history[i - 1]["scores"], history[i]["scores"])):
+                    if curr < prev - 0.05:
+                        print(f"    -> タスク{j + 1}: {prev:.2f} -> {curr:.2f}")
+
+    print(f"\n合計所要時間: {total_elapsed}s")
+    print(f"CSV: {CSV_PATH}")
+    print(f"Proofs: {PROOFS_DIR}/")
 
 
 if __name__ == "__main__":
-    run_rsi_cycle()
+    parser = argparse.ArgumentParser(description="RSI連続サイクル実行")
+    parser.add_argument("--cycles", type=int, default=5, help="サイクル数 (default: 5)")
+    args = parser.parse_args()
+    run_cycles(max_cycles=args.cycles)

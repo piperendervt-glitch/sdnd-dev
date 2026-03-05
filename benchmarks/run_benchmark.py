@@ -8,12 +8,18 @@
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 import sys
 import time
 from datetime import datetime
 from pathlib import Path
+
+# Windows CP932エンコードエラー回避
+if sys.stdout.encoding != "utf-8":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding="utf-8", errors="replace")
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -46,7 +52,7 @@ def run_single(task_id: int) -> dict:
             f"改善後のコードのみをコードブロックで出力してください。"
         )
     }]
-    response = implementer.respond(messages)
+    response = implementer.respond(messages, task_type=task.get("type"))
     elapsed = time.time() - start
 
     # コード抽出
@@ -86,6 +92,27 @@ def run_all() -> list:
     return results
 
 
+def run_repeated(task_id: int, repeat: int) -> list[dict]:
+    """同一タスクを複数回実行して統計を表示"""
+    scores = []
+    all_results = []
+    for i in range(1, repeat + 1):
+        print(f"\n--- Run {i}/{repeat} ---")
+        result = run_single(task_id)
+        scores.append(result["after_score"])
+        all_results.append(result)
+
+    avg = sum(scores) / len(scores)
+    mn, mx = min(scores), max(scores)
+    print(f"\n{'='*50}")
+    print(f"タスク {task_id} x {repeat}回")
+    print(f"  平均: {avg:.2f} / 最小: {mn:.2f} / 最大: {mx:.2f}")
+    print(f"  全スコア: {[round(s, 2) for s in scores]}")
+    print(f"{'='*50}")
+
+    return all_results
+
+
 def save_log(results: list):
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     path = LOG_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -97,13 +124,17 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=int, help="タスクID (1-5)")
     parser.add_argument("--all", action="store_true", help="全タスク実行")
+    parser.add_argument("--repeat", type=int, default=1, help="同一タスクの繰り返し回数")
     args = parser.parse_args()
 
     if args.all:
         results = run_all()
         save_log(results)
     elif args.task:
-        result = run_single(args.task)
-        save_log([result])
+        if args.repeat > 1:
+            results = run_repeated(args.task, args.repeat)
+        else:
+            results = [run_single(args.task)]
+        save_log(results)
     else:
         parser.print_help()
