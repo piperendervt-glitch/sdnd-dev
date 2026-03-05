@@ -10,6 +10,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from ollama_client import OllamaBackend
 from core.safety_constitution import get_constitution_with_ubiquitous
 
+DEFAULT_MODEL = "qwen2.5:3b"
+
 
 def _load_philosophy() -> str:
     """安全憲法 + ubiquitous_language を読み込む"""
@@ -58,11 +60,20 @@ TASK_TYPE_HINTS = {
         "- インデックスの境界値（off-by-oneエラー）\n"
         "- 空リスト・None入力時の挙動\n"
         "- 型の不一致\n"
-        "修正箇所を最小限にし、元の関数シグネチャを維持すること。\n"
-        "コードを修正した後、必ず以下を含めること：\n"
-        "- 関数のdocstring（何をする関数か・引数・戻り値）\n"
-        "- 修正箇所にインラインコメント（例：# Fix: lst[-1] に修正）\n"
-        "docstringなしの提出は不可。"
+        "修正箇所を最小限にし、元の関数シグネチャを維持すること。\n\n"
+        "バグを修正した後、必ず以下を実行すること：\n"
+        "1. Args/Returns形式のdocstringを必ず追加すること。\n"
+        "2. Args/Returns形式のdocstringを必ず追加すること。\n"
+        "3. 修正箇所に「# Fix:」で始まるインラインコメントを追加すること。\n\n"
+        "docstringのフォーマット：\n"
+        "  def func(x):\n"
+        '      """関数の説明。\n\n'
+        "      Args:\n"
+        "          x: 引数の説明\n"
+        "      Returns:\n"
+        "          戻り値の説明\n"
+        '      """\n\n'
+        "docstringとコメントのない提出は却下する。"
     ),
     "optimization": (
         "\n\n【タスク種別: 最適化】\n"
@@ -88,17 +99,29 @@ TASK_TYPE_HINTS = {
         "- 具体的な例外クラスを使う（Exception禁止、ZeroDivisionError/ValueError等を使用）\n"
         "- 例外メッセージに原因を明記する\n"
         "- try/except または事前チェック（if文）のいずれかで防御すること\n"
-        "- 正常系の動作を変えないこと。\n"
-        "エラーハンドリングを追加した後、必ず以下を含めること：\n"
-        "- 関数のdocstring（正常系・異常系の説明を含む）\n"
-        "- 各exceptブロックまたはif文にコメント（なぜその例外を捕捉するか）\n"
-        "docstringなしの提出は不可。"
+        "- 正常系の動作を変えないこと。\n\n"
+        "エラーハンドリングを追加した後、必ず以下を実行すること：\n"
+        "1. Args/Returns/Raises形式のdocstringを必ず追加すること。\n"
+        "2. Args/Returns/Raises形式のdocstringを必ず追加すること。\n"
+        "3. 各exceptブロックに「# Handle:」で始まるコメントを追加すること。\n\n"
+        "docstringのフォーマット：\n"
+        "  def func(a, b):\n"
+        '      """関数の説明。\n\n'
+        "      Args:\n"
+        "          a: 引数の説明\n"
+        "          b: 引数の説明\n"
+        "      Returns:\n"
+        "          戻り値の説明\n"
+        "      Raises:\n"
+        "          ValueError: 発生条件の説明\n"
+        '      """\n\n'
+        "docstringとコメントのない提出は却下する。"
     ),
 }
 
 
 class Agent:
-    def __init__(self, role: str, model: str = "qwen2.5:3b"):
+    def __init__(self, role: str, model: str = DEFAULT_MODEL):
         self.role = role
         self.backend = OllamaBackend(model=model)
         self.system = AGENT_SYSTEMS[role]

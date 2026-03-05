@@ -1,0 +1,47 @@
+{
+  "cycle": 2,
+  "timestamp": "2026-03-05T17:50:12.586497",
+  "tasks": [
+    {
+      "task_id": 1,
+      "task_name": "ドキュメント追加",
+      "before_score": 0.2,
+      "after_score": 1.0,
+      "improvement": 0.8,
+      "elapsed_sec": 66.7
+    },
+    {
+      "task_id": 2,
+      "task_name": "バグ修正",
+      "before_score": 0.2,
+      "after_score": 0.72,
+      "improvement": 0.52,
+      "elapsed_sec": 63.1
+    },
+    {
+      "task_id": 3,
+      "task_name": "ループ最適化",
+      "before_score": 0.2,
+      "after_score": 1.0,
+      "improvement": 0.8,
+      "elapsed_sec": 34.8
+    },
+    {
+      "task_id": 4,
+      "task_name": "変数名改善",
+      "before_score": 0.2,
+      "after_score": 1.0,
+      "improvement": 0.8,
+      "elapsed_sec": 56.0
+    },
+    {
+      "task_id": 5,
+      "task_name": "エラーハンドリング追加",
+      "before_score": 0.2,
+      "after_score": 0.86,
+      "improvement": 0.66,
+      "elapsed_sec": 74.2
+    }
+  ],
+  "avg_score": 0.92
+}

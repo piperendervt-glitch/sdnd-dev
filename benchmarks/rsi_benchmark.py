@@ -24,7 +24,7 @@ if sys.stdout.encoding != "utf-8":
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from benchmarks.minimal_benchmark import TASKS, score_before, score_after
-from sdnd_dev.agents import AGENT_SYSTEMS, TASK_TYPE_HINTS
+from sdnd_dev.agents import AGENT_SYSTEMS, TASK_TYPE_HINTS, DEFAULT_MODEL
 from core.safety_constitution import get_constitution
 from ollama_client import OllamaBackend
 
@@ -37,9 +37,9 @@ PROOFS_DIR = Path("proofs")
 # ─────────────────────────────────────────
 
 
-def run_one_cycle(system_prompt: str) -> list[dict]:
+def run_one_cycle(system_prompt: str, model: str = DEFAULT_MODEL) -> list[dict]:
     """全タスクを1回ずつ実行してスコアを返す"""
-    backend = OllamaBackend(model="qwen2.5:3b")
+    backend = OllamaBackend(model=model)
     results = []
 
     for task in TASKS:

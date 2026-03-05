@@ -24,12 +24,12 @@ if sys.stdout.encoding != "utf-8":
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from benchmarks.minimal_benchmark import TASKS, get_task, score_before, score_after
-from sdnd_dev.agents import Agent
+from sdnd_dev.agents import Agent, DEFAULT_MODEL
 
 LOG_DIR = Path("sessions/benchmark_logs")
 
 
-def run_single(task_id: int) -> dict:
+def run_single(task_id: int, model: str = DEFAULT_MODEL) -> dict:
     """1タスクを実行してスコアを返す"""
     task = get_task(task_id)
     print(f"\n{'='*50}")
@@ -42,7 +42,7 @@ def run_single(task_id: int) -> dict:
     start = time.time()
 
     # Implementer にリファクタさせる
-    implementer = Agent("implementer")
+    implementer = Agent("implementer", model=model)
     messages = [{
         "role": "user",
         "content": (
@@ -76,11 +76,11 @@ def run_single(task_id: int) -> dict:
     }
 
 
-def run_all() -> list:
+def run_all(model: str = DEFAULT_MODEL) -> list:
     """全タスクを実行"""
     results = []
     for task in TASKS:
-        result = run_single(task["id"])
+        result = run_single(task["id"], model=model)
         results.append(result)
 
     # サマリー表示
@@ -92,13 +92,13 @@ def run_all() -> list:
     return results
 
 
-def run_repeated(task_id: int, repeat: int) -> list[dict]:
+def run_repeated(task_id: int, repeat: int, model: str = DEFAULT_MODEL) -> list[dict]:
     """同一タスクを複数回実行して統計を表示"""
     scores = []
     all_results = []
     for i in range(1, repeat + 1):
         print(f"\n--- Run {i}/{repeat} ---")
-        result = run_single(task_id)
+        result = run_single(task_id, model=model)
         scores.append(result["after_score"])
         all_results.append(result)
 
@@ -125,16 +125,17 @@ if __name__ == "__main__":
     parser.add_argument("--task", type=int, help="タスクID (1-5)")
     parser.add_argument("--all", action="store_true", help="全タスク実行")
     parser.add_argument("--repeat", type=int, default=1, help="同一タスクの繰り返し回数")
+    parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollamaモデル名 (default: {DEFAULT_MODEL})")
     args = parser.parse_args()
 
     if args.all:
-        results = run_all()
+        results = run_all(model=args.model)
         save_log(results)
     elif args.task:
         if args.repeat > 1:
-            results = run_repeated(args.task, args.repeat)
+            results = run_repeated(args.task, args.repeat, model=args.model)
         else:
-            results = [run_single(args.task)]
+            results = [run_single(args.task, model=args.model)]
         save_log(results)
     else:
         parser.print_help()
