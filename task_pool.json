@@ -23,5 +23,15 @@
   {"task_id": "T22", "name": "ガード節（早期リターン）", "category": "optimization", "difficulty": "medium"},
   {"task_id": "T23", "name": "プロパティデコレータ追加", "category": "documentation", "difficulty": "medium"},
   {"task_id": "T24", "name": "ログフォーマットカスタマイズ", "category": "error_handling", "difficulty": "medium"},
-  {"task_id": "T25", "name": "enumerate使用への変換", "category": "optimization", "difficulty": "easy"}
+  {"task_id": "T25", "name": "enumerate使用への変換", "category": "optimization", "difficulty": "easy"},
+  {"task_id": "T26", "name": "シナリオテンプレート生成", "category": "theater", "difficulty": "medium"},
+  {"task_id": "T27", "name": "キャラクター設定パーサー", "category": "theater", "difficulty": "medium"},
+  {"task_id": "T28", "name": "セリフフォーマッター", "category": "theater", "difficulty": "easy"},
+  {"task_id": "T29", "name": "CSV→辞書変換", "category": "practical", "difficulty": "medium"},
+  {"task_id": "T30", "name": "日付フォーマット統一", "category": "practical", "difficulty": "easy"},
+  {"task_id": "T31", "name": "リトライデコレータ", "category": "practical", "difficulty": "hard"},
+  {"task_id": "T32", "name": "バリデーション関数", "category": "practical", "difficulty": "medium"},
+  {"task_id": "T33", "name": "エラーメッセージ改善", "category": "creative", "difficulty": "medium"},
+  {"task_id": "T34", "name": "挨拶文生成", "category": "creative", "difficulty": "easy"},
+  {"task_id": "T35", "name": "ヘルプテキスト改善", "category": "creative", "difficulty": "medium"}
 ]

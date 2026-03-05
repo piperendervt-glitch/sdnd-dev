@@ -13,7 +13,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（25問）
+# タスク定義（35問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -438,6 +438,137 @@ def index_items(items):
     return result
 """,
         "criteria": ["enumerate", "for", "return"],
+    },
+    # ── 劇場・RP特化系 ──
+    {
+        "id": 26,
+        "name": "シナリオテンプレート生成",
+        "type": "theater",
+        "description": "劇場のシナリオテンプレートを生成する関数を書き換えよ。場面（scene）・登場人物（characters）・セリフ（dialogue）を辞書で返す構造にすること。docstringも追加すること",
+        "before": """\
+def create_scenario():
+    return "Scene 1: Hello"
+""",
+        "criteria": ["scene", "characters", "dialogue", "dict", "return"],
+    },
+    {
+        "id": 27,
+        "name": "キャラクター設定パーサー",
+        "type": "theater",
+        "description": "キャラクター設定の文字列を辞書に変換するパーサーを改善せよ。name/role/traitの3フィールドをパースし、不正入力時はValueErrorを出すこと。docstringも追加すること",
+        "before": """\
+def parse_character(text):
+    parts = text.split(",")
+    return parts[0], parts[1], parts[2]
+""",
+        "criteria": ["dict", "name", "role", "ValueError"],
+    },
+    {
+        "id": 28,
+        "name": "セリフフォーマッター",
+        "type": "theater",
+        "description": "セリフを台本形式（'名前: 「セリフ」'）にフォーマットする関数を改善せよ。空文字列チェック、複数セリフ対応（リスト入力）を追加すること。docstringも追加すること",
+        "before": """\
+def format_dialogue(name, line):
+    return name + ": " + line
+""",
+        "criteria": ["format", "return", "def"],
+    },
+    # ── 実務的・日常的系 ──
+    {
+        "id": 29,
+        "name": "CSV→辞書変換",
+        "type": "practical",
+        "description": "CSVテキストを辞書のリストに変換する関数を改善せよ。csvモジュールまたは適切なパースを使用し、ヘッダー行をキーにすること。docstringも追加すること",
+        "before": """\
+def parse_csv(text):
+    lines = text.split("\\n")
+    result = []
+    for line in lines:
+        result.append(line.split(","))
+    return result
+""",
+        "criteria": ["csv", "dict", "return"],
+    },
+    {
+        "id": 30,
+        "name": "日付フォーマット統一",
+        "type": "practical",
+        "description": "文字列連結の日付フォーマットをdatetimeモジュールを使った安全な実装に書き換えよ。docstringも追加すること",
+        "before": """\
+def format_date(year, month, day):
+    return str(year) + "/" + str(month) + "/" + str(day)
+""",
+        "criteria": ["datetime", "strftime", "return"],
+    },
+    {
+        "id": 31,
+        "name": "リトライデコレータ",
+        "type": "practical",
+        "description": "手動リトライコードをデコレータパターンにリファクタせよ。最大リトライ回数を引数で指定可能にすること。docstringも追加すること",
+        "before": """\
+def fetch_data(url):
+    import urllib.request
+    for i in range(3):
+        try:
+            return urllib.request.urlopen(url).read()
+        except Exception:
+            if i == 2:
+                raise
+""",
+        "criteria": ["def", "@", "wrapper", "retry"],
+    },
+    {
+        "id": 32,
+        "name": "バリデーション関数",
+        "type": "practical",
+        "description": "入力バリデーションを追加せよ。型チェック（isinstance）、範囲チェック、エラーメッセージ付きのValueErrorを使うこと。docstringも追加すること",
+        "before": """\
+def register_user(name, age, email):
+    return {"name": name, "age": age, "email": email}
+""",
+        "criteria": ["isinstance", "ValueError", "return"],
+    },
+    # ── 創造性・人間らしさ系 ──
+    {
+        "id": 33,
+        "name": "エラーメッセージ改善",
+        "type": "creative",
+        "description": "冷たいエラーメッセージを親切で具体的なメッセージに書き換えよ。ユーザーが次に何をすべきかの提案を含めること。docstringも追加すること",
+        "before": """\
+def validate_input(value):
+    if not value:
+        raise ValueError("Error: invalid")
+    if not isinstance(value, str):
+        raise TypeError("Error: wrong type")
+    if len(value) > 100:
+        raise ValueError("Error: too long")
+    return value
+""",
+        "criteria": ["raise", "ValueError", "return"],
+    },
+    {
+        "id": 34,
+        "name": "挨拶文生成",
+        "type": "creative",
+        "description": "時間帯に応じた挨拶文を生成する関数に改善せよ。朝/昼/夕/夜を判定し、名前を含むパーソナライズされた挨拶を返すこと。docstringも追加すること",
+        "before": """\
+def greet():
+    return "Hello"
+""",
+        "criteria": ["datetime", "return", "def"],
+    },
+    {
+        "id": 35,
+        "name": "ヘルプテキスト改善",
+        "type": "creative",
+        "description": "最小限のヘルプ表示を、セクション分け・使用例・オプション説明を含む読みやすいヘルプテキストに改善せよ。docstringも追加すること",
+        "before": """\
+def show_help():
+    print("Usage: tool [options]")
+    print("Options: --help, --version")
+""",
+        "criteria": ["def", "return", "usage", "example"],
     },
 ]
 
@@ -1602,6 +1733,433 @@ def _score_task25_enumerate(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def _score_task26_scenario_template(after_code: str) -> float:
+    """タスク26: シナリオテンプレート生成 — 辞書構造・キーワード・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. 辞書を返す構造（Dict/return）(0.25)
+    has_dict = any(isinstance(node, ast.Dict) for node in ast.walk(tree))
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    if has_dict and has_return:
+        score += 0.25
+    elif has_return:
+        score += 0.1
+
+    # 2. scene/characters/dialogueキーワードが含まれる (0.2)
+    code_lower = after_code.lower()
+    keywords = ["scene", "character", "dialogue"]
+    found = sum(1 for kw in keywords if kw in code_lower)
+    if found >= 3:
+        score += 0.2
+    elif found >= 2:
+        score += 0.1
+
+    # 3. 関数が維持されている (0.1)
+    has_func = any(isinstance(node, ast.FunctionDef) for node in ast.walk(tree))
+    if has_func:
+        score += 0.1
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task27_character_parser(after_code: str) -> float:
+    """タスク27: キャラクター設定パーサー — 辞書返却・バリデーション・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. 辞書を返す構造 (0.2)
+    has_dict = any(isinstance(node, ast.Dict) for node in ast.walk(tree))
+    if has_dict:
+        score += 0.2
+
+    # 2. name/role/traitキーワード (0.15)
+    code_lower = after_code.lower()
+    keywords = ["name", "role", "trait"]
+    found = sum(1 for kw in keywords if kw in code_lower)
+    if found >= 3:
+        score += 0.15
+    elif found >= 2:
+        score += 0.1
+
+    # 3. エラーハンドリング（try/except or raise ValueError）(0.2)
+    has_try = any(isinstance(node, ast.Try) for node in ast.walk(tree))
+    has_raise = any(isinstance(node, ast.Raise) for node in ast.walk(tree))
+    if has_try or has_raise:
+        score += 0.2
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task28_dialogue_formatter(after_code: str) -> float:
+    """タスク28: セリフフォーマッター — リスト対応・バリデーション・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. 関数が維持されreturnがある (0.15)
+    has_func = any(isinstance(node, ast.FunctionDef) for node in ast.walk(tree))
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    if has_func and has_return:
+        score += 0.15
+
+    # 2. 入力チェック（if文 or isinstance or raise）(0.2)
+    has_guard = any(isinstance(node, ast.If) for node in ast.walk(tree))
+    has_isinstance = "isinstance" in after_code
+    has_raise = any(isinstance(node, ast.Raise) for node in ast.walk(tree))
+    if has_guard or has_isinstance or has_raise:
+        score += 0.2
+
+    # 3. リスト対応（forループ or isinstance(line, list)）(0.2)
+    has_for = any(isinstance(node, ast.For) for node in ast.walk(tree))
+    has_list_check = "list" in after_code
+    if has_for or has_list_check:
+        score += 0.2
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task29_csv_parser(after_code: str) -> float:
+    """タスク29: CSV→辞書変換 — csvモジュール or ヘッダー処理・辞書返却・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. csvモジュール使用 or ヘッダー処理 (0.25)
+    has_csv_import = "import csv" in after_code or "from csv" in after_code
+    has_header = "header" in after_code.lower() or "[0]" in after_code
+    if has_csv_import:
+        score += 0.25
+    elif has_header:
+        score += 0.15
+
+    # 2. 辞書を構築している（dict/Dict/{}）(0.2)
+    has_dict = any(isinstance(node, (ast.Dict, ast.DictComp)) for node in ast.walk(tree))
+    has_dict_call = any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "dict"
+        for node in ast.walk(tree)
+    )
+    if has_dict or has_dict_call or "zip" in after_code:
+        score += 0.2
+
+    # 3. returnが存在する (0.1)
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    if has_return:
+        score += 0.1
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task30_date_format(after_code: str) -> float:
+    """タスク30: 日付フォーマット統一 — datetime使用・strftime・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. datetimeモジュールを使用 (0.3)
+    has_datetime = "datetime" in after_code
+    if has_datetime:
+        score += 0.3
+
+    # 2. strftime or strptime or date()呼び出し (0.2)
+    has_strftime = "strftime" in after_code or "strptime" in after_code
+    has_date_call = "date(" in after_code or "datetime(" in after_code
+    if has_strftime or has_date_call:
+        score += 0.2
+
+    # 3. returnが存在する (0.1)
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    if has_return:
+        score += 0.1
+
+    # 4. docstringが存在する (0.2)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.2
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task31_retry_decorator(after_code: str) -> float:
+    """タスク31: リトライデコレータ — デコレータパターン・ネスト関数・引数・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. デコレータ付き関数がある (0.25)
+    has_decorator = any(
+        isinstance(node, ast.FunctionDef) and node.decorator_list
+        for node in ast.walk(tree)
+    )
+    if has_decorator:
+        score += 0.25
+
+    # 2. wrapper/inner関数パターン (0.2)
+    has_nested = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            inner_funcs = [n for n in ast.walk(node) if isinstance(n, ast.FunctionDef) and n is not node]
+            if inner_funcs:
+                has_nested = True
+                break
+    if has_nested:
+        score += 0.2
+
+    # 3. try/exceptでリトライロジック (0.15)
+    has_try = any(isinstance(node, ast.Try) for node in ast.walk(tree))
+    has_for = any(isinstance(node, ast.For) for node in ast.walk(tree))
+    if has_try and has_for:
+        score += 0.15
+    elif has_try:
+        score += 0.1
+
+    # 4. docstringが存在する (0.2)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.2
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task32_validation(after_code: str) -> float:
+    """タスク32: バリデーション関数 — isinstance・raise・メッセージ・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. isinstanceまたは型チェック (0.2)
+    has_isinstance = "isinstance" in after_code
+    has_type_check = any(isinstance(node, ast.If) for node in ast.walk(tree))
+    if has_isinstance:
+        score += 0.2
+    elif has_type_check:
+        score += 0.1
+
+    # 2. raise ValueError/TypeError (0.2)
+    specific = {"ValueError", "TypeError"}
+    has_raise = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Raise) and node.exc:
+            if isinstance(node.exc, ast.Call) and isinstance(node.exc.func, ast.Name):
+                if node.exc.func.id in specific:
+                    has_raise = True
+    if has_raise:
+        score += 0.2
+
+    # 3. エラーメッセージが具体的（引数付きraise）(0.15)
+    has_msg = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Raise) and node.exc and isinstance(node.exc, ast.Call):
+            if node.exc.args:
+                has_msg = True
+    if has_msg:
+        score += 0.15
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task33_friendly_errors(after_code: str) -> float:
+    """タスク33: エラーメッセージ改善 — 親切なメッセージ・提案含む・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. raise文が維持されている (0.15)
+    raises = [n for n in ast.walk(tree) if isinstance(n, ast.Raise)]
+    if raises:
+        score += 0.15
+
+    # 2. エラーメッセージが長くなっている（具体的・親切）(0.25)
+    msg_lengths = []
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Raise) and node.exc and isinstance(node.exc, ast.Call):
+            for arg in node.exc.args:
+                if isinstance(arg, ast.Constant) and isinstance(arg.value, str):
+                    msg_lengths.append(len(arg.value))
+                elif isinstance(arg, ast.JoinedStr):
+                    msg_lengths.append(30)  # f-stringは十分長いとみなす
+    if msg_lengths and all(m > 15 for m in msg_lengths):
+        score += 0.25
+    elif msg_lengths and any(m > 15 for m in msg_lengths):
+        score += 0.15
+
+    # 3. "Error: invalid"のような冷たいメッセージが除去されている (0.15)
+    cold_msgs = ["error: invalid", "error: wrong type", "error: too long"]
+    has_cold = any(cm in after_code.lower() for cm in cold_msgs)
+    if not has_cold:
+        score += 0.15
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task34_greeting(after_code: str) -> float:
+    """タスク34: 挨拶文生成 — 時間帯判定・名前パラメータ・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. datetime/time使用 (0.2)
+    has_datetime = "datetime" in after_code or "import time" in after_code
+    if has_datetime:
+        score += 0.2
+
+    # 2. 時間帯に応じた条件分岐（if文が複数）(0.2)
+    ifs = [n for n in ast.walk(tree) if isinstance(n, ast.If)]
+    if len(ifs) >= 2:
+        score += 0.2
+    elif len(ifs) >= 1:
+        score += 0.1
+
+    # 3. 名前引数がある（引数2つ以上 or name引数）(0.15)
+    funcs = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    has_name_arg = False
+    for func in funcs:
+        if len(func.args.args) >= 1:
+            for arg in func.args.args:
+                if arg.arg in ("name", "user_name", "username"):
+                    has_name_arg = True
+            if len(func.args.args) >= 1 and func.args.defaults:
+                has_name_arg = True
+    if has_name_arg:
+        score += 0.15
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task35_help_text(after_code: str) -> float:
+    """タスク35: ヘルプテキスト改善 — return化・セクション分け・使用例・docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2
+
+    # 1. printではなくreturnで返している (0.2)
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    print_calls = [
+        n for n in ast.walk(tree)
+        if isinstance(n, ast.Call) and isinstance(n.func, ast.Name)
+        and n.func.id == "print"
+    ]
+    if has_return and not print_calls:
+        score += 0.2
+    elif has_return:
+        score += 0.1
+
+    # 2. 使用例キーワード（usage/example）(0.2)
+    code_lower = after_code.lower()
+    has_usage = "usage" in code_lower or "example" in code_lower
+    if has_usage:
+        score += 0.2
+
+    # 3. セクション分け（複数の文字列 or \n\n）(0.15)
+    has_sections = after_code.count("\\n") >= 3 or after_code.count("\n\n") >= 2
+    if has_sections:
+        score += 0.15
+
+    # 4. docstringが存在する (0.25)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
 def score_after(task: dict, after_code: str) -> float:
     """after コードのスコア（0.0〜1.0）— 全タスクAST＋観点別"""
     scorers = {
@@ -1630,6 +2188,16 @@ def score_after(task: dict, after_code: str) -> float:
         23: lambda code: _score_task23_property(code),
         24: lambda code: _score_task24_log_format(code),
         25: lambda code: _score_task25_enumerate(code),
+        26: lambda code: _score_task26_scenario_template(code),
+        27: lambda code: _score_task27_character_parser(code),
+        28: lambda code: _score_task28_dialogue_formatter(code),
+        29: lambda code: _score_task29_csv_parser(code),
+        30: lambda code: _score_task30_date_format(code),
+        31: lambda code: _score_task31_retry_decorator(code),
+        32: lambda code: _score_task32_validation(code),
+        33: lambda code: _score_task33_friendly_errors(code),
+        34: lambda code: _score_task34_greeting(code),
+        35: lambda code: _score_task35_help_text(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
