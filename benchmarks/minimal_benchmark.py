@@ -7,9 +7,12 @@
 """
 
 import ast
+import io
+import re
+import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（5問）
+# タスク定義（9問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -75,6 +78,37 @@ def divide(a, b):
     },
     {
         "id": 6,
+        "name": "PEP8準拠",
+        "type": "naming",
+        "description": "PEP8に準拠するようリファクタせよ（インデント4スペース、行長79文字以内、snake_case命名）",
+        "before": """\
+def calculateTotalPrice(itemPrice,taxRate):
+  totalBeforeTax=itemPrice*taxRate
+  discountedPrice=totalBeforeTax-totalBeforeTax*0.1
+  finalMessage="The final price for the item after applying the discount and tax is: "+str(discountedPrice)
+  return discountedPrice
+""",
+        "criteria": ["snake_case"],
+    },
+    {
+        "id": 7,
+        "name": "型ヒント追加",
+        "type": "documentation",
+        "description": "全引数と戻り値に型ヒントを追加し、docstringも付けよ",
+        "before": """\
+def greet(name, times):
+    result = []
+    for i in range(times):
+        result.append(f"Hello, {name}!")
+    return result
+
+def average(numbers):
+    return sum(numbers) / len(numbers)
+""",
+        "criteria": ["->", ":"],
+    },
+    {
+        "id": 8,
         "name": "関数長制限",
         "type": "optimization",
         "description": "50行を超える長い関数を、50行以内の小さな関数に分割せよ",
@@ -145,7 +179,7 @@ def process_data(data):
         "criteria": ["def ", "return"],
     },
     {
-        "id": 7,
+        "id": 9,
         "name": "セキュリティ脆弱性修正",
         "type": "bugfix",
         "description": "eval/execを使った危険なコードを安全な代替実装に修正せよ",
@@ -405,8 +439,121 @@ def _score_task3_generic(task: dict, after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
-def _score_task6_function_length(after_code: str) -> float:
-    """タスク6(T8): 関数長制限 — 関数が50行以内か、分割されているか"""
+def _score_task6_pep8(after_code: str) -> float:
+    """タスク6(T6): PEP8準拠 — インデント・行長・snake_caseをチェック"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    lines = after_code.splitlines()
+
+    # 1. インデント4スペース（tokenizeで検出）(0.25)
+    indent_ok = True
+    try:
+        tokens = tokenize.generate_tokens(io.StringIO(after_code).readline)
+        for tok in tokens:
+            if tok.type == tokenize.INDENT:
+                indent_str = tok.string
+                if indent_str and indent_str != indent_str.replace('\t', '    '):
+                    indent_ok = False
+                elif indent_str and len(indent_str) % 4 != 0:
+                    indent_ok = False
+    except tokenize.TokenError:
+        pass
+    # 2スペースインデントが残っていないか追加チェック
+    for line in lines:
+        stripped = line.lstrip()
+        if stripped and line != stripped:
+            leading = len(line) - len(stripped)
+            if leading % 4 != 0 and leading % 2 == 0:
+                indent_ok = False
+                break
+    if indent_ok:
+        score += 0.25
+
+    # 2. 行長79文字以内 (0.25)
+    long_lines = [l for l in lines if len(l) > 79]
+    if not long_lines:
+        score += 0.25
+    elif len(long_lines) <= 1:
+        score += 0.1
+
+    # 3. 関数名・変数名がsnake_case (0.3)
+    camel_re = re.compile(r'[a-z][A-Z]')
+    names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            names.add(node.name)
+        if isinstance(node, ast.arg):
+            names.add(node.arg)
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Assign):
+            for target in node.targets:
+                if isinstance(target, ast.Name):
+                    names.add(target.id)
+
+    camel_names = [n for n in names if camel_re.search(n)]
+    if not camel_names:
+        score += 0.3
+    elif len(camel_names) <= 1:
+        score += 0.15
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task7_type_hints(after_code: str) -> float:
+    """タスク7(T7): 型ヒント追加 — 引数・戻り値アノテーション + docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    funcs = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    if not funcs:
+        return score
+
+    # 全引数にアノテーションがあるか (0.3)
+    total_args = 0
+    annotated_args = 0
+    for func in funcs:
+        for arg in func.args.args:
+            if arg.arg == "self":
+                continue
+            total_args += 1
+            if arg.annotation is not None:
+                annotated_args += 1
+
+    if total_args > 0:
+        ratio = annotated_args / total_args
+        if ratio >= 1.0:
+            score += 0.3
+        elif ratio >= 0.5:
+            score += 0.15
+
+    # 戻り値アノテーションがあるか (0.25)
+    funcs_with_return = sum(1 for f in funcs if f.returns is not None)
+    if funcs_with_return == len(funcs):
+        score += 0.25
+    elif funcs_with_return > 0:
+        score += 0.1
+
+    # docstringが存在するか (0.25)
+    funcs_with_doc = sum(1 for f in funcs if ast.get_docstring(f))
+    if funcs_with_doc == len(funcs):
+        score += 0.25
+    elif funcs_with_doc > 0:
+        score += 0.1
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task8_function_length(after_code: str) -> float:
+    """タスク8(T8): 関数長制限 — 関数が50行以内か、分割されているか"""
     score = 0.0
     try:
         tree = ast.parse(after_code)
@@ -441,8 +588,8 @@ def _score_task6_function_length(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
-def _score_task7_security(after_code: str) -> float:
-    """タスク7(T10): セキュリティ脆弱性修正 — eval/execが除去されているか"""
+def _score_task9_security(after_code: str) -> float:
+    """タスク9(T10): セキュリティ脆弱性修正 — eval/execが除去されているか"""
     score = 0.0
     try:
         tree = ast.parse(after_code)
@@ -485,8 +632,10 @@ def score_after(task: dict, after_code: str) -> float:
         3: lambda code: _score_task3_generic(task, code),
         4: lambda code: _score_task4_varnames(code),
         5: lambda code: _score_task5_error_handling(code),
-        6: lambda code: _score_task6_function_length(code),
-        7: lambda code: _score_task7_security(code),
+        6: lambda code: _score_task6_pep8(code),
+        7: lambda code: _score_task7_type_hints(code),
+        8: lambda code: _score_task8_function_length(code),
+        9: lambda code: _score_task9_security(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
