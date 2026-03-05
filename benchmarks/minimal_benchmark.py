@@ -13,7 +13,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（12問）
+# タスク定義（13問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -235,6 +235,23 @@ def setup_logger():
     return logger
 """,
         "criteria": ["setLevel", "logging"],
+    },
+    {
+        "id": 13,
+        "name": "import文の整理・不要削除",
+        "type": "optimization",
+        "description": "未使用のimport文を削除し、必要なimportのみ残せ。関数の動作は変えないこと",
+        "before": """\
+import os
+import sys
+import json
+import re
+import math
+
+def greet(name):
+    return "Hello, " + name
+""",
+        "criteria": ["import", "def", "return"],
     },
 ]
 
@@ -855,6 +872,69 @@ def _score_task12_log_level(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def _score_task13_unused_imports(after_code: str) -> float:
+    """タスク13(T16): import文整理 — 未使用importが除去されているか"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    # 収集: import されたモジュール名
+    imported_names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                imported_names.add(alias.asname or alias.name)
+        elif isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                imported_names.add(alias.asname or alias.name)
+
+    # 収集: 関数本体等で実際に使われている名前
+    used_names = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Name):
+            used_names.add(node.id)
+        elif isinstance(node, ast.Attribute):
+            # os.path のような使い方
+            if isinstance(node.value, ast.Name):
+                used_names.add(node.value.id)
+
+    # 未使用import = importされたが使われていない名前
+    unused = imported_names - used_names
+    # beforeの未使用: os, sys, json, re, math (5個)
+    before_unused = {"os", "sys", "json", "re", "math"}
+
+    # 1. 未使用importが除去されている (0.35)
+    if not unused:
+        score += 0.35
+    elif len(unused) <= 1:
+        score += 0.15
+
+    # 2. beforeにあった未使用importが減っている (0.15)
+    remaining_bad = imported_names & before_unused - used_names
+    if len(remaining_bad) == 0:
+        score += 0.15
+    elif len(remaining_bad) <= 2:
+        score += 0.05
+
+    # 3. 関数の動作が維持されている（returnが存在する）(0.15)
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    if has_return:
+        score += 0.15
+
+    # 4. docstringが追加されている (0.15)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.15
+
+    return round(min(score, 1.0), 2)
+
+
 def score_after(task: dict, after_code: str) -> float:
     """after コードのスコア（0.0〜1.0）— 全タスクAST＋観点別"""
     scorers = {
@@ -870,6 +950,7 @@ def score_after(task: dict, after_code: str) -> float:
         10: lambda code: _score_task10_unittest(code),
         11: lambda code: _score_task11_json_logging(code),
         12: lambda code: _score_task12_log_level(code),
+        13: lambda code: _score_task13_unused_imports(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
