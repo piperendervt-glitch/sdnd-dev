@@ -8,6 +8,7 @@ from __future__ import annotations
 import shutil
 import subprocess
 import tempfile
+import time
 from pathlib import Path
 
 TIMEOUT_SEC = 30
@@ -33,6 +34,7 @@ class Sandbox:
         script.write_text(code, encoding="utf-8")
 
         try:
+            start_time = time.time()
             result = subprocess.run(
                 ["python", "-X", "utf8", str(script)],
                 capture_output=True,
@@ -41,13 +43,15 @@ class Sandbox:
                 timeout=TIMEOUT_SEC,
                 cwd=self.work_dir,
             )
+            elapsed_sec = round(time.time() - start_time, 3)
             return {
                 "success": result.returncode == 0,
                 "stdout": result.stdout[:2000],
                 "stderr": result.stderr[:1000],
+                "elapsed_sec": elapsed_sec,
             }
         except subprocess.TimeoutExpired:
-            return {"success": False, "stdout": "", "stderr": f"タイムアウト（{TIMEOUT_SEC}秒）"}
+            return {"success": False, "stdout": "", "stderr": f"タイムアウト（{TIMEOUT_SEC}秒）", "elapsed_sec": TIMEOUT_SEC}
 
     def git_init(self) -> str:
         """作業ディレクトリをgit初期化"""
