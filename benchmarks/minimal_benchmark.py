@@ -13,7 +13,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（35問）
+# タスク定義（43問：リファクタ35問 + HumanEval 8問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -569,6 +569,201 @@ def show_help():
     print("Options: --help, --version")
 """,
         "criteria": ["def", "return", "usage", "example"],
+    },
+    # ── HumanEval系（コード生成 + テストケース通過率）──
+    {
+        "id": 36,
+        "name": "HE: Two Sum",
+        "type": "humaneval",
+        "description": (
+            "リストと目標値を受け取り、合計が目標値になる2つのインデックスを返す関数を実装せよ。\n"
+            "答えが必ず1つ存在すると仮定してよい。同じ要素を2回使ってはいけない。\n\n"
+            "例:\n"
+            "  two_sum([2, 7, 11, 15], 9) -> [0, 1]  # 2+7=9\n"
+            "  two_sum([3, 2, 4], 6) -> [1, 2]  # 2+4=6\n"
+            "  two_sum([3, 3], 6) -> [0, 1]  # 3+3=6"
+        ),
+        "before": """\
+def two_sum(nums, target):
+    pass
+""",
+        "tests": [
+            ("two_sum([2, 7, 11, 15], 9)", [0, 1]),
+            ("two_sum([3, 2, 4], 6)", [1, 2]),
+            ("two_sum([3, 3], 6)", [0, 1]),
+            ("two_sum([1, 5, 3, 7], 8)", [1, 2]),
+            ("two_sum([0, 4, 3, 0], 0)", [0, 3]),
+        ],
+    },
+    {
+        "id": 37,
+        "name": "HE: FizzBuzz",
+        "type": "humaneval",
+        "description": (
+            "1からnまでの文字列リストを返す関数を実装せよ。\n"
+            "- 3の倍数: 'Fizz'\n"
+            "- 5の倍数: 'Buzz'\n"
+            "- 3と5の倍数: 'FizzBuzz'\n"
+            "- それ以外: 数字の文字列\n\n"
+            "例:\n"
+            "  fizzbuzz(5) -> ['1', '2', 'Fizz', '4', 'Buzz']\n"
+            "  fizzbuzz(15)[-1] -> 'FizzBuzz'\n"
+            "  fizzbuzz(3) -> ['1', '2', 'Fizz']"
+        ),
+        "before": """\
+def fizzbuzz(n):
+    pass
+""",
+        "tests": [
+            ("fizzbuzz(1)", ["1"]),
+            ("fizzbuzz(3)", ["1", "2", "Fizz"]),
+            ("fizzbuzz(5)", ["1", "2", "Fizz", "4", "Buzz"]),
+            ("fizzbuzz(15)[-1]", "FizzBuzz"),
+            ("len(fizzbuzz(100))", 100),
+        ],
+    },
+    {
+        "id": 38,
+        "name": "HE: 回文判定",
+        "type": "humaneval",
+        "description": (
+            "文字列が回文かどうかを判定する関数を実装せよ。\n"
+            "大文字小文字を区別せず、英数字以外は無視すること。\n\n"
+            "例:\n"
+            "  is_palindrome('racecar') -> True\n"
+            "  is_palindrome('A man a plan a canal Panama') -> True\n"
+            "  is_palindrome('hello') -> False"
+        ),
+        "before": """\
+def is_palindrome(s):
+    pass
+""",
+        "tests": [
+            ("is_palindrome('racecar')", True),
+            ("is_palindrome('hello')", False),
+            ("is_palindrome('A man a plan a canal Panama')", True),
+            ("is_palindrome('')", True),
+            ("is_palindrome('Was it a car or a cat I saw')", True),
+        ],
+    },
+    {
+        "id": 39,
+        "name": "HE: フィボナッチ",
+        "type": "humaneval",
+        "description": (
+            "n番目のフィボナッチ数を返す関数を実装せよ。\n"
+            "fib(0)=0, fib(1)=1, fib(n)=fib(n-1)+fib(n-2)\n\n"
+            "例:\n"
+            "  fibonacci(0) -> 0\n"
+            "  fibonacci(1) -> 1\n"
+            "  fibonacci(10) -> 55"
+        ),
+        "before": """\
+def fibonacci(n):
+    pass
+""",
+        "tests": [
+            ("fibonacci(0)", 0),
+            ("fibonacci(1)", 1),
+            ("fibonacci(5)", 5),
+            ("fibonacci(10)", 55),
+            ("fibonacci(20)", 6765),
+        ],
+    },
+    {
+        "id": 40,
+        "name": "HE: リスト平坦化",
+        "type": "humaneval",
+        "description": (
+            "ネストされたリストを1次元に平坦化する関数を実装せよ。\n"
+            "任意の深さのネストに対応すること。\n\n"
+            "例:\n"
+            "  flatten([1, [2, 3], [4, [5, 6]]]) -> [1, 2, 3, 4, 5, 6]\n"
+            "  flatten([[1, 2], [3]]) -> [1, 2, 3]\n"
+            "  flatten([1, 2, 3]) -> [1, 2, 3]"
+        ),
+        "before": """\
+def flatten(lst):
+    pass
+""",
+        "tests": [
+            ("flatten([1, [2, 3], [4, [5, 6]]])", [1, 2, 3, 4, 5, 6]),
+            ("flatten([[1, 2], [3]])", [1, 2, 3]),
+            ("flatten([1, 2, 3])", [1, 2, 3]),
+            ("flatten([])", []),
+            ("flatten([[[1]], [[2]], [[3]]])", [1, 2, 3]),
+        ],
+    },
+    {
+        "id": 41,
+        "name": "HE: 母音カウント",
+        "type": "humaneval",
+        "description": (
+            "文字列中の母音(a,e,i,o,u)の数を返す関数を実装せよ。\n"
+            "大文字小文字を区別しないこと。\n\n"
+            "例:\n"
+            "  count_vowels('hello') -> 2\n"
+            "  count_vowels('AEIOU') -> 5\n"
+            "  count_vowels('xyz') -> 0"
+        ),
+        "before": """\
+def count_vowels(s):
+    pass
+""",
+        "tests": [
+            ("count_vowels('hello')", 2),
+            ("count_vowels('AEIOU')", 5),
+            ("count_vowels('xyz')", 0),
+            ("count_vowels('')", 0),
+            ("count_vowels('Python Programming')", 4),
+        ],
+    },
+    {
+        "id": 42,
+        "name": "HE: 重複除去（順序保持）",
+        "type": "humaneval",
+        "description": (
+            "リストから重複を除去し、元の順序を保持した新しいリストを返す関数を実装せよ。\n\n"
+            "例:\n"
+            "  remove_duplicates([1, 2, 2, 3, 1]) -> [1, 2, 3]\n"
+            "  remove_duplicates([4, 4, 4]) -> [4]\n"
+            "  remove_duplicates([1, 2, 3]) -> [1, 2, 3]"
+        ),
+        "before": """\
+def remove_duplicates(lst):
+    pass
+""",
+        "tests": [
+            ("remove_duplicates([1, 2, 2, 3, 1])", [1, 2, 3]),
+            ("remove_duplicates([4, 4, 4])", [4]),
+            ("remove_duplicates([1, 2, 3])", [1, 2, 3]),
+            ("remove_duplicates([])", []),
+            ("remove_duplicates(['a', 'b', 'a', 'c'])", ["a", "b", "c"]),
+        ],
+    },
+    {
+        "id": 43,
+        "name": "HE: 最大公約数",
+        "type": "humaneval",
+        "description": (
+            "2つの正の整数の最大公約数(GCD)を返す関数を実装せよ。\n"
+            "math.gcdを使わず、ユークリッドの互除法で実装すること。\n\n"
+            "例:\n"
+            "  gcd(12, 8) -> 4\n"
+            "  gcd(7, 13) -> 1\n"
+            "  gcd(100, 75) -> 25"
+        ),
+        "before": """\
+def gcd(a, b):
+    pass
+""",
+        "tests": [
+            ("gcd(12, 8)", 4),
+            ("gcd(7, 13)", 1),
+            ("gcd(100, 75)", 25),
+            ("gcd(1, 1)", 1),
+            ("gcd(48, 18)", 6),
+        ],
     },
 ]
 
@@ -1733,6 +1928,40 @@ def _score_task25_enumerate(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def _score_humaneval(task: dict, after_code: str) -> float:
+    """HumanEval系: テストケース通過率でスコアリング"""
+    tests = task.get("tests", [])
+    if not tests:
+        return 0.0
+
+    # コードをパース・構文チェック
+    try:
+        ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+
+    # コードを実行して関数を取得
+    namespace = {}
+    try:
+        exec(after_code, namespace)
+    except Exception:
+        return 0.1  # 構文OKだが実行エラー
+
+    # テストケース通過率を計算
+    passed = 0
+    for test_expr, expected in tests:
+        try:
+            result = eval(test_expr, namespace)
+            if result == expected:
+                passed += 1
+        except Exception:
+            pass
+
+    # スコア = 0.2(構文OK) + 0.8 * (通過率)
+    ratio = passed / len(tests)
+    return round(0.2 + 0.8 * ratio, 2)
+
+
 def _score_task26_scenario_template(after_code: str) -> float:
     """タスク26: シナリオテンプレート生成 — 辞書構造・キーワード・docstring"""
     score = 0.0
@@ -2198,6 +2427,14 @@ def score_after(task: dict, after_code: str) -> float:
         33: lambda code: _score_task33_friendly_errors(code),
         34: lambda code: _score_task34_greeting(code),
         35: lambda code: _score_task35_help_text(code),
+        36: lambda code: _score_humaneval(task, code),
+        37: lambda code: _score_humaneval(task, code),
+        38: lambda code: _score_humaneval(task, code),
+        39: lambda code: _score_humaneval(task, code),
+        40: lambda code: _score_humaneval(task, code),
+        41: lambda code: _score_humaneval(task, code),
+        42: lambda code: _score_humaneval(task, code),
+        43: lambda code: _score_humaneval(task, code),
     }
     scorer = scorers.get(task["id"])
     if scorer:

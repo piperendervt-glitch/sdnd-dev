@@ -33,5 +33,13 @@
   {"task_id": "T32", "name": "バリデーション関数", "category": "practical", "difficulty": "medium"},
   {"task_id": "T33", "name": "エラーメッセージ改善", "category": "creative", "difficulty": "medium"},
   {"task_id": "T34", "name": "挨拶文生成", "category": "creative", "difficulty": "easy"},
-  {"task_id": "T35", "name": "ヘルプテキスト改善", "category": "creative", "difficulty": "medium"}
+  {"task_id": "T35", "name": "ヘルプテキスト改善", "category": "creative", "difficulty": "medium"},
+  {"task_id": "T36", "name": "HE: Two Sum", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T37", "name": "HE: FizzBuzz", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T38", "name": "HE: 回文判定", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T39", "name": "HE: フィボナッチ", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T40", "name": "HE: リスト平坦化", "category": "humaneval", "difficulty": "medium"},
+  {"task_id": "T41", "name": "HE: 母音カウント", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T42", "name": "HE: 重複除去（順序保持）", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T43", "name": "HE: 最大公約数", "category": "humaneval", "difficulty": "easy"}
 ]

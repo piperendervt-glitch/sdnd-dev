@@ -41,17 +41,29 @@ def run_single(task_id: int, model: str = DEFAULT_MODEL) -> dict:
     before = score_before(task)
     start = time.time()
 
-    # Implementer にリファクタさせる
+    # Implementer にリファクタ/実装させる
     implementer = Agent("implementer", model=model)
-    messages = [{
-        "role": "user",
-        "content": (
+    if task.get("type") == "humaneval":
+        prompt = (
+            f"以下の関数を正しく実装してください。\n"
+            f"問題：{task['description']}\n\n"
+            f"関数テンプレート：\n"
+            f"```python\n{task['before']}\n```\n\n"
+            f"注意：\n"
+            f"- 関数名・引数名は変更しないこと\n"
+            f"- 関数の実装のみをコードブロックで出力すること\n"
+            f"- import文が必要なら関数の外に書くこと\n"
+            f"- 説明は不要、コードのみ出力すること\n\n"
+            f"実装後のコードのみをコードブロックで出力してください。"
+        )
+    else:
+        prompt = (
             f"以下のコードを改善してください。\n"
             f"指示：{task['description']}\n\n"
             f"```python\n{task['before']}\n```\n\n"
             f"改善後のコードのみをコードブロックで出力してください。"
         )
-    }]
+    messages = [{"role": "user", "content": prompt}]
     response = implementer.respond(messages, task_type=task.get("type"))
     elapsed = time.time() - start
 
@@ -122,7 +134,7 @@ def save_log(results: list):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=int, help="タスクID (1-35)")
+    parser.add_argument("--task", type=int, help="タスクID (1-43)")
     parser.add_argument("--all", action="store_true", help="全タスク実行")
     parser.add_argument("--repeat", type=int, default=1, help="同一タスクの繰り返し回数")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollamaモデル名 (default: {DEFAULT_MODEL})")
