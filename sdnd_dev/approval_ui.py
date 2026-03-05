@@ -89,6 +89,46 @@ def run_approval_ui(session_path: Path | None = None):
         print(f"→ {action} を記録しました: {path.name}")
 
 
+def show_summary():
+    """承認済みセッション数と平均ターン数を表示"""
+    paths = sorted(SESSION_DIR.glob("*.json"))
+    if not paths:
+        print("セッションがありません。")
+        return
+
+    total = len(paths)
+    approved = 0
+    rejected = 0
+    pending = 0
+    turn_counts = []
+
+    for p in paths:
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            action = data.get("human_approval", {}).get("action", "pending")
+            if action == "approved":
+                approved += 1
+            elif action == "rejected":
+                rejected += 1
+            else:
+                pending += 1
+            turn_counts.append(len(data.get("turns", [])))
+        except Exception:
+            continue
+
+    avg_turns = round(sum(turn_counts) / len(turn_counts), 1) if turn_counts else 0
+
+    print(f"\n{'='*40}")
+    print(f"  セッションサマリー")
+    print(f"{'='*40}")
+    print(f"  総セッション数 : {total}")
+    print(f"  承認           : {approved}")
+    print(f"  却下           : {rejected}")
+    print(f"  保留           : {pending}")
+    print(f"  平均ターン数   : {avg_turns}")
+    print(f"{'='*40}\n")
+
+
 def _needs_approval(path: Path) -> bool:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -101,5 +141,9 @@ def _needs_approval(path: Path) -> bool:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--session", type=Path, help="特定セッションのパス")
+    parser.add_argument("--summary", action="store_true", help="承認サマリーを表示")
     args = parser.parse_args()
-    run_approval_ui(session_path=args.session)
+    if args.summary:
+        show_summary()
+    else:
+        run_approval_ui(session_path=args.session)
