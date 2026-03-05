@@ -247,9 +247,11 @@ def _score_task5_error_handling(after_code: str) -> float:
         return 0.0
     score += 0.3
 
-    # 2. try/except ブロックが存在する
+    # 2. 防御パターンが存在する（try/except または 事前チェック if + raise）
     has_try = any(isinstance(node, ast.Try) for node in ast.walk(tree))
-    if has_try:
+    has_guard = any(isinstance(node, ast.If) for node in ast.walk(tree)) and \
+                any(isinstance(node, ast.Raise) for node in ast.walk(tree))
+    if has_try or has_guard:
         score += 0.14
 
     # 3. 具体的な例外クラス（ZeroDivisionError/ValueError）を使っている
