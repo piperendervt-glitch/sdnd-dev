@@ -8,6 +8,7 @@
 
 import ast
 import io
+import json
 import re
 import tokenize
 
@@ -881,3 +882,14 @@ def get_task(task_id: int) -> dict:
         if t["id"] == task_id:
             return t
     raise ValueError(f"タスクID {task_id} が見つかりません")
+
+
+def format_benchmark_results(results):
+    """ベンチマーク結果を受け取りJSON形式の文字列として返す。
+
+    Args:
+        results: 辞書のリスト（例: [{'task': 'T1', 'score': 1.00}, ...]）
+    Returns:
+        JSON形式の文字列
+    """
+    return json.dumps(results, ensure_ascii=False, indent=4)
