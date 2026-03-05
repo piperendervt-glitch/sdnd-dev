@@ -54,10 +54,18 @@ def _extract_code(text: str) -> str:
 # ── メインセッション ─────────────────────────────────
 
 
+DUMMY_RESPONSES = {
+    "architect": "[dry-run] 設計方針：お題に対しシンプルな関数を1つ作成します。",
+    "implementer": '[dry-run] ```python\ndef hello():\n    print("hello")\n\nhello()\n```',
+    "reviewer": "[dry-run] コードは正常に動作しています。承認",
+}
+
+
 def run_session(
     task: str = DEFAULT_TASK,
     max_turns: int = MAX_TURNS,
     human_review: bool = False,
+    dry_run: bool = False,
 ) -> dict:
     """開発セッションを実行する。"""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -82,13 +90,13 @@ def run_session(
         print(f"--- Turn {turn}/{max_turns} ---\n")
 
         # ── Architect ──
-        arch_resp = architect.respond(messages)
+        arch_resp = DUMMY_RESPONSES["architect"] if dry_run else architect.respond(messages)
         print(f"[Architect]\n{arch_resp}\n")
         messages.append({"role": "assistant", "content": f"[Architect] {arch_resp}"})
         messages.append({"role": "user", "content": "上記の設計方針でコードを実装してください。"})
 
         # ── Implementer ──
-        impl_resp = implementer.respond(messages)
+        impl_resp = DUMMY_RESPONSES["implementer"] if dry_run else implementer.respond(messages)
         print(f"[Implementer]\n{impl_resp}\n")
         messages.append({"role": "assistant", "content": f"[Implementer] {impl_resp}"})
 
@@ -115,7 +123,7 @@ def run_session(
             f"実行結果:\n{json.dumps(exec_result, ensure_ascii=False)}"
         )
         messages.append({"role": "user", "content": f"レビューしてください：\n{review_input}"})
-        review_resp = reviewer.respond(messages)
+        review_resp = DUMMY_RESPONSES["reviewer"] if dry_run else reviewer.respond(messages)
         print(f"[Reviewer]\n{review_resp}\n")
         messages.append({"role": "assistant", "content": f"[Reviewer] {review_resp}"})
 
@@ -181,5 +189,6 @@ if __name__ == "__main__":
     parser.add_argument("--task", default=DEFAULT_TASK, help="開発タスク")
     parser.add_argument("--max-turns", type=int, default=MAX_TURNS, help="最大ターン数")
     parser.add_argument("--human-review", action="store_true", help="Reviewer承認後に人間の最終承認を待つ")
+    parser.add_argument("--dry-run", action="store_true", help="LLMを呼ばずダミーテキストでフロー確認")
     args = parser.parse_args()
-    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review)
+    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run)
