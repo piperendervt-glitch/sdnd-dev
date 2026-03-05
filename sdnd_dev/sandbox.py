@@ -25,7 +25,7 @@ class Sandbox:
 
     def __exit__(self, *args):
         if self.work_dir and self.work_dir.exists():
-            shutil.rmtree(self.work_dir)
+            shutil.rmtree(self.work_dir, ignore_errors=True)
 
     def run_python(self, code: str) -> dict:
         """Pythonコードを隔離ディレクトリで実行"""
@@ -34,9 +34,10 @@ class Sandbox:
 
         try:
             result = subprocess.run(
-                ["python", str(script)],
+                ["python", "-X", "utf8", str(script)],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 timeout=TIMEOUT_SEC,
                 cwd=self.work_dir,
             )
