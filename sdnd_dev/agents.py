@@ -8,14 +8,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from ollama_client import OllamaBackend
-from core.safety_constitution import get_constitution_with_ubiquitous
+from core.safety_constitution import get_full_constitution
 
 DEFAULT_MODEL = "qwen2.5:3b"
 
 
 def _load_philosophy() -> str:
-    """安全憲法 + ubiquitous_language を読み込む"""
-    return get_constitution_with_ubiquitous()
+    """安全憲法（軽量版）を読み込む"""
+    return get_full_constitution()
 
 
 PHILOSOPHY = _load_philosophy()

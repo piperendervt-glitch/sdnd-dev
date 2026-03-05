@@ -39,18 +39,7 @@ LOG_DIR = Path(__file__).parent.parent / "sessions" / "dev_scenario"
 PHILOSOPHY = get_full_constitution()
 
 REVIEWER_PHILOSOPHY_CHECK = """
-## 思想チェック（最優先）
-
-コードレビュー前に以下を必ず確認すること：
-
-1. ubiquitous_language.md の語彙を使っているか
-   （例：「セッション」「エントリ」「スコアリング」等）
-2. QualityEvaluatorのスコア基準を変更していないか
-3. sessions/ 以下のディレクトリ構造を壊していないか
-4. SDNDの思想（ナラティブ・物語性）を損なっていないか
-
-上記いずれかに違反する場合は「思想違反：（理由）」として
-コードの品質に関係なく差し戻すこと。
+コードが動作するなら「承認」、問題があれば「差し戻し：（理由）」と書くこと。
 """
 
 # ── ヘルパー ──────────────────────────────────────────
@@ -77,8 +66,8 @@ def run_session(
     implementer = Agent("implementer")
     reviewer = Agent("reviewer")
 
-    # Reviewer に思想チェック項目を追加注入
-    reviewer.system = PHILOSOPHY + "\n\n" + REVIEWER_PHILOSOPHY_CHECK + "\n\n" + reviewer.system
+    # Reviewer に思想チェック項目を追加注入（PHILOSOPHY は agents.py で注入済み）
+    reviewer.system = reviewer.system + "\n" + REVIEWER_PHILOSOPHY_CHECK
 
     log = {"task": task, "turns": [], "result": "incomplete"}
     messages: list[dict] = [{"role": "user", "content": f"お題：{task}"}]

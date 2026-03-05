@@ -56,19 +56,26 @@ def get_constitution_with_ubiquitous() -> str:
     return "\n\n---\n\n".join(parts)
 
 
+CONSTITUTION_LITE = """
+## SDND-Dev 安全憲法（軽量版）
+
+### 禁止事項
+- 外部ネットワークアクセス禁止
+- サンドボックス外への書き込み禁止
+- 構文エラーのあるコード提出禁止
+
+### ルール
+- コード変更後は必ず実行確認
+- Reviewerは「承認」または「差し戻し：（理由）」で終えること
+
+### SDND用語（必須）
+- セッション / エントリ / スコアリング を使うこと
+""".strip()
+
+
 def get_full_constitution() -> str:
     """
-    安全憲法 + ubiquitous_language.md を結合して返す
-    全エージェントのシステムプロンプトに注入する
+    3Bモデル向け軽量版安全憲法を返す。
+    ubiquitous_language.md は注入しない（トークン負荷軽減）。
     """
-    parts = [CONSTITUTION_TEXT]
-
-    # sdnd-theater の ubiquitous_language.md を読み込む
-    ub_path = Path(__file__).parent.parent.parent / "sdnd-theater" / "ubiquitous_language.md"
-    if ub_path.exists():
-        parts.append(
-            "## SDND思想憲法（ubiquitous_language）\n\n"
-            + ub_path.read_text(encoding="utf-8")
-        )
-
-    return "\n\n---\n\n".join(parts)
+    return CONSTITUTION_LITE
