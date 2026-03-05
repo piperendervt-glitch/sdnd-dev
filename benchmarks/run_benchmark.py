@@ -122,15 +122,35 @@ def save_log(results: list):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=int, help="タスクID (1-15)")
+    parser.add_argument("--task", type=int, help="タスクID (1-25)")
     parser.add_argument("--all", action="store_true", help="全タスク実行")
     parser.add_argument("--repeat", type=int, default=1, help="同一タスクの繰り返し回数")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollamaモデル名 (default: {DEFAULT_MODEL})")
     args = parser.parse_args()
 
     if args.all:
-        results = run_all(model=args.model)
-        save_log(results)
+        if args.repeat > 1:
+            all_cycle_results = []
+            for cycle in range(1, args.repeat + 1):
+                print(f"\n{'#'*50}")
+                print(f"  Cycle {cycle}/{args.repeat}")
+                print(f"{'#'*50}")
+                results = run_all(model=args.model)
+                avg = sum(r["improvement"] for r in results) / len(results)
+                all_cycle_results.append({"cycle": cycle, "avg_improvement": round(avg, 2), "results": results})
+                save_log(results)
+            # サマリー表示
+            print(f"\n{'='*50}")
+            print(f"  全サイクル完了 ({args.repeat} cycles)")
+            print(f"{'='*50}")
+            for cr in all_cycle_results:
+                print(f"  Cycle {cr['cycle']}: avg +{cr['avg_improvement']:.2f}")
+            overall = sum(cr["avg_improvement"] for cr in all_cycle_results) / len(all_cycle_results)
+            print(f"  Overall avg: +{overall:.2f}")
+            print(f"{'='*50}")
+        else:
+            results = run_all(model=args.model)
+            save_log(results)
     elif args.task:
         if args.repeat > 1:
             results = run_repeated(args.task, args.repeat, model=args.model)
