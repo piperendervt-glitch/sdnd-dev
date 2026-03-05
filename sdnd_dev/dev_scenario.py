@@ -67,6 +67,7 @@ def run_session(
     max_turns: int = MAX_TURNS,
     human_review: bool = False,
     dry_run: bool = False,
+    quiet: bool = False,
 ) -> dict:
     """開発セッションを実行する。"""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -81,25 +82,29 @@ def run_session(
     log = {"task": task, "turns": [], "result": "incomplete"}
     messages: list[dict] = [{"role": "user", "content": f"お題：{task}"}]
 
-    print(f"\n{'=' * 60}")
-    print(f"  SDND Dev Scenario")
-    print(f"  task: {task}")
-    print(f"  max_turns: {max_turns}")
-    print(f"{'=' * 60}\n")
+    if not quiet:
+        print(f"\n{'=' * 60}")
+        print(f"  SDND Dev Scenario")
+        print(f"  task: {task}")
+        print(f"  max_turns: {max_turns}")
+        print(f"{'=' * 60}\n")
 
     for turn in range(1, max_turns + 1):
-        print(f"--- Turn {turn}/{max_turns} ---\n")
+        if not quiet:
+            print(f"--- Turn {turn}/{max_turns} ---\n")
         turn_start = time.time()
 
         # ── Architect ──
         arch_resp = DUMMY_RESPONSES["architect"] if dry_run else architect.respond(messages)
-        print(f"[Architect]\n{arch_resp}\n")
+        if not quiet:
+            print(f"[Architect]\n{arch_resp}\n")
         messages.append({"role": "assistant", "content": f"[Architect] {arch_resp}"})
         messages.append({"role": "user", "content": "上記の設計方針でコードを実装してください。"})
 
         # ── Implementer ──
         impl_resp = DUMMY_RESPONSES["implementer"] if dry_run else implementer.respond(messages)
-        print(f"[Implementer]\n{impl_resp}\n")
+        if not quiet:
+            print(f"[Implementer]\n{impl_resp}\n")
         messages.append({"role": "assistant", "content": f"[Implementer] {impl_resp}"})
 
         # ── コード実行（サンドボックス） ──
@@ -112,12 +117,13 @@ def run_session(
                 if exec_result["success"]:
                     sb.git_commit(f"Turn {turn}: {task[:40]}")
             status = "OK" if exec_result["success"] else "FAIL"
-            print(f"[Exec] {status}")
-            if exec_result.get("stdout"):
-                print(f"  stdout: {exec_result['stdout'][:300]}")
-            if exec_result.get("stderr"):
-                print(f"  stderr: {exec_result['stderr'][:300]}")
-            print()
+            if not quiet:
+                print(f"[Exec] {status}")
+                if exec_result.get("stdout"):
+                    print(f"  stdout: {exec_result['stdout'][:300]}")
+                if exec_result.get("stderr"):
+                    print(f"  stderr: {exec_result['stderr'][:300]}")
+                print()
 
         # ── Reviewer ──
         review_input = (
@@ -126,12 +132,16 @@ def run_session(
         )
         messages.append({"role": "user", "content": f"レビューしてください：\n{review_input}"})
         review_resp = DUMMY_RESPONSES["reviewer"] if dry_run else reviewer.respond(messages)
-        print(f"[Reviewer]\n{review_resp}\n")
+        if not quiet:
+            print(f"[Reviewer]\n{review_resp}\n")
         messages.append({"role": "assistant", "content": f"[Reviewer] {review_resp}"})
 
         # ── ターンログ ──
         turn_elapsed = round(time.time() - turn_start, 3)
-        print(f"[Turn {turn} elapsed: {turn_elapsed}s]\n")
+        if quiet:
+            print(f"Turn {turn}/{max_turns} done ({turn_elapsed}s)")
+        else:
+            print(f"[Turn {turn} elapsed: {turn_elapsed}s]\n")
         log["turns"].append({
             "turn": turn,
             "architect": arch_resp,
@@ -195,5 +205,6 @@ if __name__ == "__main__":
     parser.add_argument("--max-turns", type=int, default=MAX_TURNS, help="最大ターン数")
     parser.add_argument("--human-review", action="store_true", help="Reviewer承認後に人間の最終承認を待つ")
     parser.add_argument("--dry-run", action="store_true", help="LLMを呼ばずダミーテキストでフロー確認")
+    parser.add_argument("--quiet", action="store_true", help="エージェント出力を抑制し結果のみ表示")
     args = parser.parse_args()
-    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run)
+    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run, quiet=args.quiet)
