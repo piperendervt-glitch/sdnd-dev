@@ -215,5 +215,26 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true", help="LLMを呼ばずダミーテキストでフロー確認")
     parser.add_argument("--quiet", action="store_true", help="エージェント出力を抑制し結果のみ表示")
     parser.add_argument("--output", type=str, default=None, help="セッション結果を指定パスにも保存")
+    parser.add_argument("--repeat", type=int, default=1, help="同じタスクをN回繰り返し承認率を表示")
     args = parser.parse_args()
-    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run, quiet=args.quiet, output=args.output)
+
+    if args.repeat > 1:
+        results = []
+        for i in range(1, args.repeat + 1):
+            print(f"\n{'#' * 60}")
+            print(f"  Repeat {i}/{args.repeat}")
+            print(f"{'#' * 60}")
+            log = run_session(
+                task=args.task, max_turns=args.max_turns,
+                human_review=args.human_review, dry_run=args.dry_run,
+                quiet=args.quiet, output=args.output,
+            )
+            results.append(log["result"])
+        approved = results.count("approved")
+        print(f"\n{'=' * 60}")
+        print(f"  Repeat Results: {args.repeat} runs")
+        print(f"  Approved : {approved}/{args.repeat} ({round(approved / args.repeat * 100, 1)}%)")
+        print(f"  Results  : {results}")
+        print(f"{'=' * 60}")
+    else:
+        run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run, quiet=args.quiet, output=args.output)
