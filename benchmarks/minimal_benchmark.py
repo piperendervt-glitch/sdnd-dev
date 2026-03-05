@@ -13,7 +13,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（43問：リファクタ35問 + HumanEval 8問）
+# タスク定義（51問：リファクタ35問 + HumanEval 8問 + HumanEval-Pure 8問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -763,6 +763,145 @@ def gcd(a, b):
             ("gcd(100, 75)", 25),
             ("gcd(1, 1)", 1),
             ("gcd(48, 18)", 6),
+        ],
+    },
+    # ── HumanEval-Pure（純粋な問題文のみ、例示なし）──
+    {
+        "id": 44,
+        "name": "HE-Pure: 括弧の整合性チェック",
+        "type": "humaneval",
+        "description": "文字列中の括弧 (), [], {} が正しく対応しているかを判定する関数を実装せよ。",
+        "before": """\
+def is_valid_brackets(s):
+    pass
+""",
+        "tests": [
+            ("is_valid_brackets('()')", True),
+            ("is_valid_brackets('()[]{}')", True),
+            ("is_valid_brackets('(]')", False),
+            ("is_valid_brackets('([)]')", False),
+            ("is_valid_brackets('{[]}')", True),
+            ("is_valid_brackets('')", True),
+        ],
+    },
+    {
+        "id": 45,
+        "name": "HE-Pure: ローマ数字→整数変換",
+        "type": "humaneval",
+        "description": "ローマ数字の文字列を整数に変換する関数を実装せよ。入力は1〜3999の範囲。",
+        "before": """\
+def roman_to_int(s):
+    pass
+""",
+        "tests": [
+            ("roman_to_int('III')", 3),
+            ("roman_to_int('IV')", 4),
+            ("roman_to_int('IX')", 9),
+            ("roman_to_int('XLII')", 42),
+            ("roman_to_int('MCMXCIV')", 1994),
+            ("roman_to_int('MMXXVI')", 2026),
+        ],
+    },
+    {
+        "id": 46,
+        "name": "HE-Pure: 最大部分配列和",
+        "type": "humaneval",
+        "description": "整数リストの連続する部分配列の最大和を返す関数を実装せよ。リストは1要素以上。",
+        "before": """\
+def max_subarray_sum(nums):
+    pass
+""",
+        "tests": [
+            ("max_subarray_sum([-2,1,-3,4,-1,2,1,-5,4])", 6),
+            ("max_subarray_sum([1])", 1),
+            ("max_subarray_sum([5,4,-1,7,8])", 23),
+            ("max_subarray_sum([-1,-2,-3])", -1),
+            ("max_subarray_sum([1,2,3,4,5])", 15),
+        ],
+    },
+    {
+        "id": 47,
+        "name": "HE-Pure: ソート済みリストのマージ",
+        "type": "humaneval",
+        "description": "2つのソート済みリストを1つのソート済みリストにマージする関数を実装せよ。",
+        "before": """\
+def merge_sorted(list1, list2):
+    pass
+""",
+        "tests": [
+            ("merge_sorted([1,3,5], [2,4,6])", [1,2,3,4,5,6]),
+            ("merge_sorted([], [1,2,3])", [1,2,3]),
+            ("merge_sorted([1,2,3], [])", [1,2,3]),
+            ("merge_sorted([1,1], [1,1])", [1,1,1,1]),
+            ("merge_sorted([-3,0,5], [-2,1,4])", [-3,-2,0,1,4,5]),
+        ],
+    },
+    {
+        "id": 48,
+        "name": "HE-Pure: 行列の転置",
+        "type": "humaneval",
+        "description": "2次元リスト（行列）を転置する関数を実装せよ。",
+        "before": """\
+def transpose(matrix):
+    pass
+""",
+        "tests": [
+            ("transpose([[1,2,3],[4,5,6]])", [[1,4],[2,5],[3,6]]),
+            ("transpose([[1]])", [[1]]),
+            ("transpose([[1,2],[3,4],[5,6]])", [[1,3,5],[2,4,6]]),
+            ("transpose([[1,2,3]])", [[1],[2],[3]]),
+        ],
+    },
+    {
+        "id": 49,
+        "name": "HE-Pure: 文字列圧縮",
+        "type": "humaneval",
+        "description": "連続する同一文字を文字+出現回数に圧縮する関数を実装せよ。1回の場合も数字を付ける。",
+        "before": """\
+def compress(s):
+    pass
+""",
+        "tests": [
+            ("compress('aabcccccaaa')", "a2b1c5a3"),
+            ("compress('abc')", "a1b1c1"),
+            ("compress('aaa')", "a3"),
+            ("compress('')", ""),
+            ("compress('a')", "a1"),
+        ],
+    },
+    {
+        "id": 50,
+        "name": "HE-Pure: 素数判定",
+        "type": "humaneval",
+        "description": "与えられた整数が素数かどうかを判定する関数を実装せよ。",
+        "before": """\
+def is_prime(n):
+    pass
+""",
+        "tests": [
+            ("is_prime(2)", True),
+            ("is_prime(1)", False),
+            ("is_prime(17)", True),
+            ("is_prime(4)", False),
+            ("is_prime(97)", True),
+            ("is_prime(100)", False),
+        ],
+    },
+    {
+        "id": 51,
+        "name": "HE-Pure: 単語出現頻度",
+        "type": "humaneval",
+        "description": "文字列中の各単語の出現回数を辞書で返す関数を実装せよ。大文字小文字を区別しない。",
+        "before": """\
+def word_count(text):
+    pass
+""",
+        "tests": [
+            ("word_count('hello world hello')", {"hello": 2, "world": 1}),
+            ("word_count('a A a')", {"a": 3}),
+            ("word_count('')", {}),
+            ("word_count('one')", {"one": 1}),
+            ("word_count('The the THE')", {"the": 3}),
         ],
     },
 ]
@@ -2435,6 +2574,14 @@ def score_after(task: dict, after_code: str) -> float:
         41: lambda code: _score_humaneval(task, code),
         42: lambda code: _score_humaneval(task, code),
         43: lambda code: _score_humaneval(task, code),
+        44: lambda code: _score_humaneval(task, code),
+        45: lambda code: _score_humaneval(task, code),
+        46: lambda code: _score_humaneval(task, code),
+        47: lambda code: _score_humaneval(task, code),
+        48: lambda code: _score_humaneval(task, code),
+        49: lambda code: _score_humaneval(task, code),
+        50: lambda code: _score_humaneval(task, code),
+        51: lambda code: _score_humaneval(task, code),
     }
     scorer = scorers.get(task["id"])
     if scorer:

@@ -41,5 +41,13 @@
   {"task_id": "T40", "name": "HE: リスト平坦化", "category": "humaneval", "difficulty": "medium"},
   {"task_id": "T41", "name": "HE: 母音カウント", "category": "humaneval", "difficulty": "easy"},
   {"task_id": "T42", "name": "HE: 重複除去（順序保持）", "category": "humaneval", "difficulty": "easy"},
-  {"task_id": "T43", "name": "HE: 最大公約数", "category": "humaneval", "difficulty": "easy"}
+  {"task_id": "T43", "name": "HE: 最大公約数", "category": "humaneval", "difficulty": "easy"},
+  {"task_id": "T44", "name": "HE-Pure: 括弧の整合性チェック", "category": "humaneval_pure", "difficulty": "medium"},
+  {"task_id": "T45", "name": "HE-Pure: ローマ数字→整数変換", "category": "humaneval_pure", "difficulty": "medium"},
+  {"task_id": "T46", "name": "HE-Pure: 最大部分配列和", "category": "humaneval_pure", "difficulty": "medium"},
+  {"task_id": "T47", "name": "HE-Pure: ソート済みリストのマージ", "category": "humaneval_pure", "difficulty": "easy"},
+  {"task_id": "T48", "name": "HE-Pure: 行列の転置", "category": "humaneval_pure", "difficulty": "easy"},
+  {"task_id": "T49", "name": "HE-Pure: 文字列圧縮", "category": "humaneval_pure", "difficulty": "medium"},
+  {"task_id": "T50", "name": "HE-Pure: 素数判定", "category": "humaneval_pure", "difficulty": "easy"},
+  {"task_id": "T51", "name": "HE-Pure: 単語出現頻度", "category": "humaneval_pure", "difficulty": "easy"}
 ]
