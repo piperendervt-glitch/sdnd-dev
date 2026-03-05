@@ -1,5 +1,7 @@
 # sdnd-dev
 
+[Japanese README (README.md)](README.md)
+
 An autonomous software improvement framework powered by multi-agent AI.
 Sister project of [sdnd-theater](https://github.com/piperendervt-glitch/sdnd-theater).
 

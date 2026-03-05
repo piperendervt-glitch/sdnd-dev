@@ -1,5 +1,7 @@
 # sdnd-dev
 
+[English README (README.en.md)](README.en.md)
+
 AI マルチエージェントによる自律的ソフトウェア改善フレームワーク。
 [sdnd-theater](https://github.com/piperendervt-glitch/sdnd-theater) の姉妹プロジェクト。
 
