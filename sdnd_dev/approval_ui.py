@@ -9,6 +9,7 @@ Reviewerが承認したセッションをあなたが最終確認するための
 
 from __future__ import annotations
 
+import csv
 import json
 import argparse
 from pathlib import Path
@@ -129,6 +130,39 @@ def show_summary():
     print(f"{'='*40}\n")
 
 
+def export_approved_csv(output_path: str = "approved_sessions.csv"):
+    """承認済みセッションの一覧をCSV形式で出力"""
+    paths = sorted(SESSION_DIR.glob("*.json"))
+    rows = []
+    for p in paths:
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            action = data.get("human_approval", {}).get("action", "")
+            if action != "approved":
+                continue
+            turns = data.get("turns", [])
+            rows.append({
+                "file": p.name,
+                "task": data.get("task", ""),
+                "result": data.get("result", ""),
+                "turns": len(turns),
+                "elapsed_sec": sum(t.get("elapsed_sec", 0) for t in turns),
+            })
+        except Exception:
+            continue
+
+    if not rows:
+        print("承認済みセッションがありません。")
+        return
+
+    out = Path(output_path)
+    with open(out, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["file", "task", "result", "turns", "elapsed_sec"])
+        writer.writeheader()
+        writer.writerows(rows)
+    print(f"CSV exported: {out} ({len(rows)} sessions)")
+
+
 def _needs_approval(path: Path) -> bool:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
@@ -142,8 +176,11 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--session", type=Path, help="特定セッションのパス")
     parser.add_argument("--summary", action="store_true", help="承認サマリーを表示")
+    parser.add_argument("--export", type=str, nargs="?", const="approved_sessions.csv", default=None, help="承認済みセッションをCSV出力")
     args = parser.parse_args()
     if args.summary:
         show_summary()
+    elif args.export is not None:
+        export_approved_csv(args.export)
     else:
         run_approval_ui(session_path=args.session)
