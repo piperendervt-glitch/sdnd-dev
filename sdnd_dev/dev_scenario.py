@@ -18,6 +18,7 @@ import argparse
 import json
 import re
 import sys
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -88,6 +89,7 @@ def run_session(
 
     for turn in range(1, max_turns + 1):
         print(f"--- Turn {turn}/{max_turns} ---\n")
+        turn_start = time.time()
 
         # ── Architect ──
         arch_resp = DUMMY_RESPONSES["architect"] if dry_run else architect.respond(messages)
@@ -128,6 +130,8 @@ def run_session(
         messages.append({"role": "assistant", "content": f"[Reviewer] {review_resp}"})
 
         # ── ターンログ ──
+        turn_elapsed = round(time.time() - turn_start, 3)
+        print(f"[Turn {turn} elapsed: {turn_elapsed}s]\n")
         log["turns"].append({
             "turn": turn,
             "architect": arch_resp,
@@ -135,6 +139,7 @@ def run_session(
             "code": code,
             "exec_result": exec_result,
             "reviewer": review_resp,
+            "elapsed_sec": turn_elapsed,
         })
 
         # ── 終了判定: Reviewer 承認 ──
