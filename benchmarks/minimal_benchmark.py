@@ -12,7 +12,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（11問）
+# タスク定義（12問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -220,6 +220,20 @@ def process(data):
     return result
 """,
         "criteria": ["json", "logging", "import"],
+    },
+    {
+        "id": 12,
+        "name": "ログレベル動的変更",
+        "type": "error_handling",
+        "description": "ログレベルを引数で動的に変更できるようリファクタせよ。バリデーションとdocstringも追加すること",
+        "before": """\
+def setup_logger():
+    import logging
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger(__name__)
+    return logger
+""",
+        "criteria": ["setLevel", "logging"],
     },
 ]
 
@@ -756,6 +770,90 @@ def _score_task11_json_logging(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def zero_from_generate_eval(after_code: str) -> float:
+    """beforeコードが不要なタスク（創造性系・リファクタ系）のスコアリング関数。
+
+    評価観点（各0.25点）：
+    1. 関数名がsnake_caseで意味のある名前か
+    2. docstringが存在するか
+    3. 引数に型ヒントがあるか
+    4. PEP8準拠（行長・インデント）
+    """
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef):
+            # 1. snake_case チェック
+            if re.match(r'^[a-z][a-z0-9_]*$', node.name):
+                score += 0.25
+            # 2. docstring チェック
+            if ast.get_docstring(node):
+                score += 0.25
+            # 3. 型ヒントチェック
+            if node.returns or any(arg.annotation for arg in node.args.args):
+                score += 0.25
+            break
+
+    # 4. PEP8行長チェック
+    lines = after_code.split('\n')
+    if all(len(line) <= 79 for line in lines):
+        score += 0.25
+
+    return round(min(score, 1.0), 2)
+
+
+def _score_task12_log_level(after_code: str) -> float:
+    """タスク12(T15): ログレベル動的変更 — setLevel/引数/バリデーション/docstring"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.1  # 構文OK
+
+    # 1. logging.setLevel() の使用 (0.25)
+    has_set_level = any(
+        isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute)
+        and node.func.attr == "setLevel"
+        for node in ast.walk(tree)
+    )
+    if has_set_level:
+        score += 0.25
+
+    # 2. 引数でログレベルを受け取る設計 (0.25)
+    funcs = [n for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)]
+    has_level_arg = False
+    for func in funcs:
+        for arg in func.args.args:
+            if arg.arg in ("level", "log_level", "loglevel"):
+                has_level_arg = True
+        # デフォルト引数でもOK
+        if func.args.defaults:
+            has_level_arg = True
+    if has_level_arg:
+        score += 0.25
+
+    # 3. try/except または if によるバリデーション (0.2)
+    has_try = any(isinstance(node, ast.Try) for node in ast.walk(tree))
+    has_if = any(isinstance(node, ast.If) for node in ast.walk(tree))
+    if has_try or has_if:
+        score += 0.2
+
+    # 4. docstring の存在 (0.2)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.2
+
+    return round(min(score, 1.0), 2)
+
+
 def score_after(task: dict, after_code: str) -> float:
     """after コードのスコア（0.0〜1.0）— 全タスクAST＋観点別"""
     scorers = {
@@ -770,6 +868,7 @@ def score_after(task: dict, after_code: str) -> float:
         9: lambda code: _score_task9_security(code),
         10: lambda code: _score_task10_unittest(code),
         11: lambda code: _score_task11_json_logging(code),
+        12: lambda code: _score_task12_log_level(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
