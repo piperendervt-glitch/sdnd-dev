@@ -1,0 +1,11 @@
+[
+  {
+    "task_id": 50,
+    "task_name": "HE-Pure: 素数判定",
+    "before_score": 0.2,
+    "after_score": 1.0,
+    "improvement": 0.8,
+    "elapsed_sec": 8.0,
+    "after_code": "def is_prime(n):\n    if n <= 1:\n        return False\n    elif n <= 3:\n        return True\n    elif n % 2 == 0 or n % 3 == 0:\n        return False\n    i = 5\n    while i * i <= n:\n        if n % i == 0 or n % (i + 2) == 0:\n            return False\n        i += 6\n    return True"
+  }
+]

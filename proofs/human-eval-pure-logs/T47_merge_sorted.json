@@ -1,0 +1,11 @@
+[
+  {
+    "task_id": 47,
+    "task_name": "HE-Pure: ソート済みリストのマージ",
+    "before_score": 0.2,
+    "after_score": 1.0,
+    "improvement": 0.8,
+    "elapsed_sec": 9.0,
+    "after_code": "def merge_sorted(list1, list2):\n    merged_list = []\n    i, j = 0, 0\n\n    while i < len(list1) and j < len(list2):\n        if list1[i] <= list2[j]:\n            merged_list.append(list1[i])\n            i += 1\n        else:\n            merged_list.append(list2[j])\n            j += 1\n\n    merged_list.extend(list1[i:])\n    merged_list.extend(list2[j:])\n    return merged_list"
+  }
+]

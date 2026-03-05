@@ -74,6 +74,25 @@ HumanEval easy〜medium問題 16問で評価。
 
 T49の失敗原因: エッジケース見落とし（「1回の場合も数字を付ける」ルールを無視）。3Bモデルの限界。
 
+### 再現可能な評価結果（純粋実行）
+
+HumanEval-Pure（例示なし）の結果を公開しています。
+
+- タスク数: 8問
+- pass@1: 87.5% (7/8満点)
+- モデル: qwen2.5:3b (Claude Code介在なし)
+- 詳細: [proofs/human-eval-pure-results.md](proofs/human-eval-pure-results.md)
+- 生ログ: [proofs/human-eval-pure-logs/](proofs/human-eval-pure-logs/)
+
+再現手順:
+```bash
+git clone https://github.com/piperendervt-glitch/sdnd-dev.git
+cd sdnd-dev
+pip install -e ../sdnd-theater  # ollama必要
+ollama run qwen2.5:3b
+python -m benchmarks.run_benchmark --task 44 45 46 47 48 49 50 51
+```
+
 ### スコア推移（5世代）
 
 | 世代 | 概要                     | 平均スコア |

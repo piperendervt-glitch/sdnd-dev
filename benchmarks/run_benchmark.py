@@ -134,7 +134,7 @@ def save_log(results: list):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", type=int, help="タスクID (1-51)")
+    parser.add_argument("--task", type=int, nargs="+", help="タスクID (1-51、複数指定可)")
     parser.add_argument("--all", action="store_true", help="全タスク実行")
     parser.add_argument("--repeat", type=int, default=1, help="同一タスクの繰り返し回数")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollamaモデル名 (default: {DEFAULT_MODEL})")
@@ -164,10 +164,16 @@ if __name__ == "__main__":
             results = run_all(model=args.model)
             save_log(results)
     elif args.task:
-        if args.repeat > 1:
-            results = run_repeated(args.task, args.repeat, model=args.model)
+        if len(args.task) == 1:
+            task_id = args.task[0]
+            if args.repeat > 1:
+                results = run_repeated(task_id, args.repeat, model=args.model)
+            else:
+                results = [run_single(task_id, model=args.model)]
         else:
-            results = [run_single(args.task, model=args.model)]
+            results = []
+            for task_id in args.task:
+                results.append(run_single(task_id, model=args.model))
         save_log(results)
     else:
         parser.print_help()

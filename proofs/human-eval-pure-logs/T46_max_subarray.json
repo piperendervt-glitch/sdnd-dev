@@ -1,0 +1,11 @@
+[
+  {
+    "task_id": 46,
+    "task_name": "HE-Pure: 最大部分配列和",
+    "before_score": 0.2,
+    "after_score": 1.0,
+    "improvement": 0.8,
+    "elapsed_sec": 7.1,
+    "after_code": "def max_subarray_sum(nums):\n    if not nums:\n        return 0\n\n    current_max = nums[0]\n    global_max = nums[0]\n\n    for num in nums[1:]:\n        current_max = max(num, current_max + num)\n        global_max = max(global_max, current_max)\n\n    return global_max"
+  }
+]

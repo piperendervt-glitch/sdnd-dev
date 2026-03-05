@@ -1,0 +1,11 @@
+[
+  {
+    "task_id": 48,
+    "task_name": "HE-Pure: 行列の転置",
+    "before_score": 0.2,
+    "after_score": 1.0,
+    "improvement": 0.8,
+    "elapsed_sec": 5.0,
+    "after_code": "def transpose(matrix):\n    return [[matrix[row][col] for row in range(len(matrix))] for col in range(len(matrix[0]))]"
+  }
+]

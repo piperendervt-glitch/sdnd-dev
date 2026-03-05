@@ -1,0 +1,11 @@
+[
+  {
+    "task_id": 44,
+    "task_name": "HE-Pure: 括弧の整合性チェック",
+    "before_score": 0.2,
+    "after_score": 1.0,
+    "improvement": 0.8,
+    "elapsed_sec": 15.5,
+    "after_code": "def is_valid_brackets(s):\n    bracket_stack = []\n    bracket_pairs = {'(': ')', '[': ']', '{': '}'}\n    \n    for char in s:\n        if char in bracket_pairs:\n            bracket_stack.append(char)\n        elif char in bracket_pairs.values():\n            if not bracket_stack or bracket_pairs[bracket_stack.pop()] != char:\n                return False\n    return not bracket_stack"
+  }
+]

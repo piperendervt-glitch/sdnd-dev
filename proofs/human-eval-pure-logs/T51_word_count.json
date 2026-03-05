@@ -1,0 +1,11 @@
+[
+  {
+    "task_id": 51,
+    "task_name": "HE-Pure: 単語出現頻度",
+    "before_score": 0.2,
+    "after_score": 1.0,
+    "improvement": 0.8,
+    "elapsed_sec": 7.0,
+    "after_code": "def word_count(text):\n    text = text.lower()\n    word_count_dict = {}\n    words = text.split()\n    for word in words:\n        if word in word_count_dict:\n            word_count_dict[word] += 1\n        else:\n            word_count_dict[word] = 1\n    return word_count_dict"
+  }
+]
