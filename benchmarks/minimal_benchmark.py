@@ -13,7 +13,7 @@ import re
 import tokenize
 
 # ─────────────────────────────────────────
-# タスク定義（13問）
+# タスク定義（14問）
 # ─────────────────────────────────────────
 
 TASKS = [
@@ -235,6 +235,21 @@ def setup_logger():
     return logger
 """,
         "criteria": ["setLevel", "logging"],
+    },
+    {
+        "id": 14,
+        "name": "設定文字列パース関数",
+        "type": "error_handling",
+        "description": "設定文字列をパースする関数にエラー処理・型変換・docstringを追加せよ",
+        "before": """\
+def parse_config(config_str):
+    result = {}
+    for line in config_str.split('\\n'):
+        key, value = line.split('=')
+        result[key] = value
+    return result
+""",
+        "criteria": ["try", "except", "return", "docstring"],
     },
     {
         "id": 13,
@@ -872,6 +887,51 @@ def _score_task12_log_level(after_code: str) -> float:
     return round(min(score, 1.0), 2)
 
 
+def _score_task14_config_parse(after_code: str) -> float:
+    """タスク14(T14): 設定文字列パース — 例外処理・dict返却・docstring・型変換"""
+    score = 0.0
+    try:
+        tree = ast.parse(after_code)
+    except SyntaxError:
+        return 0.0
+    score += 0.2  # 構文OK
+
+    # 1. try/exceptが存在する (0.25)
+    has_try = any(isinstance(node, ast.Try) for node in ast.walk(tree))
+    if has_try:
+        score += 0.25
+
+    # 2. dictを返している（return文が存在する）(0.15)
+    has_return = any(isinstance(node, ast.Return) for node in ast.walk(tree))
+    if has_return:
+        score += 0.15
+
+    # 3. docstringが存在する (0.2)
+    has_docstring = any(
+        isinstance(node, ast.FunctionDef) and ast.get_docstring(node)
+        for node in ast.walk(tree)
+    )
+    if has_docstring:
+        score += 0.2
+
+    # 4. 値の型変換処理がある（int()/float()/strip()等の呼び出し）(0.2)
+    type_convert_funcs = {"int", "float", "bool", "str"}
+    strip_methods = {"strip", "lstrip", "rstrip", "lower", "upper"}
+    has_type_convert = False
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Call):
+            # int(), float() 等の組み込み関数
+            if isinstance(node.func, ast.Name) and node.func.id in type_convert_funcs:
+                has_type_convert = True
+            # .strip() 等のメソッド呼び出し
+            if isinstance(node.func, ast.Attribute) and node.func.attr in strip_methods:
+                has_type_convert = True
+    if has_type_convert:
+        score += 0.2
+
+    return round(min(score, 1.0), 2)
+
+
 def _score_task13_unused_imports(after_code: str) -> float:
     """タスク13(T16): import文整理 — 未使用importが除去されているか"""
     score = 0.0
@@ -951,6 +1011,7 @@ def score_after(task: dict, after_code: str) -> float:
         11: lambda code: _score_task11_json_logging(code),
         12: lambda code: _score_task12_log_level(code),
         13: lambda code: _score_task13_unused_imports(code),
+        14: lambda code: _score_task14_config_parse(code),
     }
     scorer = scorers.get(task["id"])
     if scorer:
