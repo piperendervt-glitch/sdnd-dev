@@ -54,3 +54,21 @@ def get_constitution_with_ubiquitous() -> str:
     if ub_path.exists():
         parts.append("## SDND用語辞書（ubiquitous_language）\n\n" + ub_path.read_text(encoding="utf-8"))
     return "\n\n---\n\n".join(parts)
+
+
+def get_full_constitution() -> str:
+    """
+    安全憲法 + ubiquitous_language.md を結合して返す
+    全エージェントのシステムプロンプトに注入する
+    """
+    parts = [CONSTITUTION_TEXT]
+
+    # sdnd-theater の ubiquitous_language.md を読み込む
+    ub_path = Path(__file__).parent.parent.parent / "sdnd-theater" / "ubiquitous_language.md"
+    if ub_path.exists():
+        parts.append(
+            "## SDND思想憲法（ubiquitous_language）\n\n"
+            + ub_path.read_text(encoding="utf-8")
+        )
+
+    return "\n\n---\n\n".join(parts)

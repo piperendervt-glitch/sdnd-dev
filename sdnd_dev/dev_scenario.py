@@ -26,12 +26,32 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from sdnd_dev.agents import Agent
 from sdnd_dev.sandbox import Sandbox
+from sdnd_dev.approval_ui import show_session, prompt_approval
+from core.safety_constitution import get_full_constitution
 
 # ── 定数 ─────────────────────────────────────────────
 
 DEFAULT_TASK = "CSVを読み込んで集計するスクリプトを作れ"
 MAX_TURNS = 5
 LOG_DIR = Path(__file__).parent.parent / "sessions" / "dev_scenario"
+
+# ── 思想憲法 ─────────────────────────────────────────
+PHILOSOPHY = get_full_constitution()
+
+REVIEWER_PHILOSOPHY_CHECK = """
+## 思想チェック（最優先）
+
+コードレビュー前に以下を必ず確認すること：
+
+1. ubiquitous_language.md の語彙を使っているか
+   （例：「セッション」「エントリ」「スコアリング」等）
+2. QualityEvaluatorのスコア基準を変更していないか
+3. sessions/ 以下のディレクトリ構造を壊していないか
+4. SDNDの思想（ナラティブ・物語性）を損なっていないか
+
+上記いずれかに違反する場合は「思想違反：（理由）」として
+コードの品質に関係なく差し戻すこと。
+"""
 
 # ── ヘルパー ──────────────────────────────────────────
 
@@ -48,6 +68,7 @@ def _extract_code(text: str) -> str:
 def run_session(
     task: str = DEFAULT_TASK,
     max_turns: int = MAX_TURNS,
+    human_review: bool = False,
 ) -> dict:
     """開発セッションを実行する。"""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -55,6 +76,9 @@ def run_session(
     architect = Agent("architect")
     implementer = Agent("implementer")
     reviewer = Agent("reviewer")
+
+    # Reviewer に思想チェック項目を追加注入
+    reviewer.system = PHILOSOPHY + "\n\n" + REVIEWER_PHILOSOPHY_CHECK + "\n\n" + reviewer.system
 
     log = {"task": task, "turns": [], "result": "incomplete"}
     messages: list[dict] = [{"role": "user", "content": f"お題：{task}"}]
@@ -120,6 +144,26 @@ def run_session(
         if "承認" in review_resp and "差し戻し" not in review_resp:
             log["result"] = "approved"
             print(f"[APPROVED] Turn {turn} で承認されました。\n")
+
+            # ── human-review モード：人間の最終承認 ──
+            if human_review:
+                print("[HUMAN REVIEW] 人間の最終承認を待っています...\n")
+                show_session(log)
+                action, comment = prompt_approval()
+
+                if action == "approved":
+                    log["human_approval"] = {"action": "approved", "comment": ""}
+                    print("[HUMAN APPROVED] 人間が承認しました。\n")
+                elif action == "rejected":
+                    log["result"] = "rejected"
+                    log["human_approval"] = {"action": "rejected", "comment": ""}
+                    print("[HUMAN REJECTED] 人間が却下しました。\n")
+                elif action == "sendback":
+                    log["human_approval"] = {"action": "sendback", "comment": comment}
+                    print(f"[HUMAN SENDBACK] 差し戻し: {comment}\n")
+                    messages.append({"role": "user", "content": f"人間からの差し戻し：{comment}\n修正してください。"})
+                    continue
+
             break
 
         # 差し戻し → 次ターンへ
@@ -128,6 +172,10 @@ def run_session(
     else:
         log["result"] = "max_turns_reached"
         print(f"[TIMEOUT] {max_turns} ターンで終了（強制打ち切り）\n")
+
+    # ── human_approval 初期化（未設定の場合） ──
+    if "human_approval" not in log:
+        log["human_approval"] = {"action": "pending", "comment": ""}
 
     # ── ログ保存 ──
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -143,5 +191,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="SDND Dev Scenario - Multi-Agent Development")
     parser.add_argument("--task", default=DEFAULT_TASK, help="開発タスク")
     parser.add_argument("--max-turns", type=int, default=MAX_TURNS, help="最大ターン数")
+    parser.add_argument("--human-review", action="store_true", help="Reviewer承認後に人間の最終承認を待つ")
     args = parser.parse_args()
-    run_session(task=args.task, max_turns=args.max_turns)
+    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review)
