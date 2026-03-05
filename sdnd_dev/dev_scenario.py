@@ -68,6 +68,7 @@ def run_session(
     human_review: bool = False,
     dry_run: bool = False,
     quiet: bool = False,
+    output: str | None = None,
 ) -> dict:
     """開発セッションを実行する。"""
     LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -194,6 +195,13 @@ def run_session(
     log_path = LOG_DIR / f"{timestamp}.json"
     log_path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Log saved: {log_path}")
+
+    if output:
+        out_path = Path(output)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(json.dumps(log, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(f"Output saved: {out_path}")
+
     return log
 
 
@@ -206,5 +214,6 @@ if __name__ == "__main__":
     parser.add_argument("--human-review", action="store_true", help="Reviewer承認後に人間の最終承認を待つ")
     parser.add_argument("--dry-run", action="store_true", help="LLMを呼ばずダミーテキストでフロー確認")
     parser.add_argument("--quiet", action="store_true", help="エージェント出力を抑制し結果のみ表示")
+    parser.add_argument("--output", type=str, default=None, help="セッション結果を指定パスにも保存")
     args = parser.parse_args()
-    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run, quiet=args.quiet)
+    run_session(task=args.task, max_turns=args.max_turns, human_review=args.human_review, dry_run=args.dry_run, quiet=args.quiet, output=args.output)
