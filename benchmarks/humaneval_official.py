@@ -1,6 +1,6 @@
-"""HumanEval公式30問ベンチマーク（純粋実力測定用）
+"""HumanEval公式50問ベンチマーク（純粋実力測定用）
 
-HumanEval 164問からeasy〜medium難易度の30問を選定。
+HumanEval 164問からeasy〜medium難易度の50問を選定。
 task_pool.jsonには連携しない測定専用ベンチマーク。
 
 評価方法: unittest通過率（pass@1）
@@ -12,7 +12,7 @@ import ast
 import traceback
 
 # ─────────────────────────────────────────
-# 30問定義（HumanEval公式問題番号付き）
+# 50問定義（HumanEval公式問題番号付き）
 # ─────────────────────────────────────────
 
 HUMANEVAL_TASKS = [
@@ -590,6 +590,496 @@ HUMANEVAL_TASKS = [
             ("unique([5, 3, 5, 2, 3, 3, 9, 0, 123])", [0, 2, 3, 5, 9, 123]),
         ],
     },
+    # HumanEval/10
+    {
+        "he_id": 10,
+        "name": "make_palindrome",
+        "description": (
+            "Find the shortest palindrome that begins with a supplied string.\n"
+            "Algorithm idea is simple:\n"
+            "- Find the longest postfix of supplied string that is a palindrome.\n"
+            "- Append to the end of the string reverse of a string prefix that comes before the palindromic suffix.\n"
+            ">>> make_palindrome('')\n"
+            "''\n"
+            ">>> make_palindrome('cat')\n"
+            "'catac'\n"
+            ">>> make_palindrome('cata')\n"
+            "'catac'"
+        ),
+        "before": "def make_palindrome(string: str) -> str:\n    pass",
+        "tests": [
+            ("make_palindrome('')", ''),
+            ("make_palindrome('cat')", 'catac'),
+            ("make_palindrome('cata')", 'catac'),
+            ("make_palindrome('A')", 'A'),
+            ("make_palindrome('xyx')", 'xyx'),
+            ("make_palindrome('jerry')", 'jerryrrej'),
+        ],
+    },
+    # HumanEval/19
+    {
+        "he_id": 19,
+        "name": "sort_numbers",
+        "description": (
+            "Input is a space-delimited string of numberals from 'zero' to 'nine'.\n"
+            "Valid choices are 'zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight' and 'nine'.\n"
+            "Return the string with numbers sorted from smallest to largest.\n"
+            ">>> sort_numbers('three one five')\n"
+            "'one three five'"
+        ),
+        "before": "def sort_numbers(numbers: str) -> str:\n    pass",
+        "tests": [
+            ("sort_numbers('')", ''),
+            ("sort_numbers('three')", 'three'),
+            ("sort_numbers('three five nine')", 'three five nine'),
+            ("sort_numbers('five zero four seven nine eight')", 'zero four five seven eight nine'),
+            ("sort_numbers('six five four three two one zero')", 'zero one two three four five six'),
+        ],
+    },
+    # HumanEval/33
+    {
+        "he_id": 33,
+        "name": "sort_third",
+        "description": (
+            "This function takes a list l and returns a list l' such that\n"
+            "l' is identical to l in the indices that are not divisible by three, while its values at the indices\n"
+            "that are divisible by three are equal to the values of the corresponding indices of l, but sorted.\n"
+            ">>> sort_third([1, 2, 3])\n"
+            "[1, 2, 3]\n"
+            ">>> sort_third([5, 6, 3, 4, 8, 9, 2])\n"
+            "[2, 6, 3, 4, 8, 9, 5]"
+        ),
+        "before": "from typing import List\n\ndef sort_third(l: List[int]) -> List[int]:\n    pass",
+        "tests": [
+            ("sort_third([1, 2, 3])", [1, 2, 3]),
+            ("sort_third([5, 6, 3, 4, 8, 9, 2])", [2, 6, 3, 4, 8, 9, 5]),
+            ("sort_third([5, 8, 3, 4, 6, 9, 2])", [2, 8, 3, 4, 6, 9, 5]),
+            ("sort_third([5, 6, 9, 4, 8, 3, 2])", [2, 6, 9, 4, 8, 3, 5]),
+        ],
+    },
+    # HumanEval/36
+    {
+        "he_id": 36,
+        "name": "fizz_buzz",
+        "description": (
+            "Return the number of times the digit 7 appears in integers less than n which are divisible by 11 or 13.\n"
+            ">>> fizz_buzz(50)\n"
+            "0\n"
+            ">>> fizz_buzz(78)\n"
+            "2\n"
+            ">>> fizz_buzz(79)\n"
+            "3"
+        ),
+        "before": "def fizz_buzz(n: int) -> int:\n    pass",
+        "tests": [
+            ("fizz_buzz(50)", 0),
+            ("fizz_buzz(78)", 2),
+            ("fizz_buzz(79)", 3),
+            ("fizz_buzz(100)", 3),
+            ("fizz_buzz(200)", 6),
+            ("fizz_buzz(4000)", 192),
+        ],
+    },
+    # HumanEval/37
+    {
+        "he_id": 37,
+        "name": "sort_even",
+        "description": (
+            "This function takes a list l and returns a list l' such that\n"
+            "l' is identical to l in the odd indices, while its values at the even indices are equal\n"
+            "to the values of the even indices of l, but sorted.\n"
+            ">>> sort_even([1, 2, 3])\n"
+            "[1, 2, 3]\n"
+            ">>> sort_even([5, 6, 3, 4])\n"
+            "[3, 6, 5, 4]"
+        ),
+        "before": "from typing import List\n\ndef sort_even(l: List[int]) -> List[int]:\n    pass",
+        "tests": [
+            ("sort_even([1, 2, 3])", [1, 2, 3]),
+            ("sort_even([5, 6, 3, 4])", [3, 6, 5, 4]),
+            ("sort_even([5, 3, -5, 2, -3, 3, 9, 0, 123])", [-5, 3, -3, 2, 5, 3, 9, 0, 123]),
+        ],
+    },
+    # HumanEval/39
+    {
+        "he_id": 39,
+        "name": "prime_fib",
+        "description": (
+            "prime_fib returns n-th number that is a Fibonacci number and it's also prime.\n"
+            ">>> prime_fib(1)\n"
+            "2\n"
+            ">>> prime_fib(2)\n"
+            "3\n"
+            ">>> prime_fib(3)\n"
+            "5\n"
+            ">>> prime_fib(4)\n"
+            "13\n"
+            ">>> prime_fib(5)\n"
+            "89"
+        ),
+        "before": "def prime_fib(n: int) -> int:\n    pass",
+        "tests": [
+            ("prime_fib(1)", 2),
+            ("prime_fib(2)", 3),
+            ("prime_fib(3)", 5),
+            ("prime_fib(4)", 13),
+            ("prime_fib(5)", 89),
+        ],
+    },
+    # HumanEval/40
+    {
+        "he_id": 40,
+        "name": "triples_sum_to_zero",
+        "description": (
+            "triples_sum_to_zero takes a list of integers as an input.\n"
+            "it returns True if there are three distinct elements in the list that sum to zero, and False otherwise.\n"
+            ">>> triples_sum_to_zero([1, 3, 5, 0])\n"
+            "False\n"
+            ">>> triples_sum_to_zero([1, 3, -2, 1])\n"
+            "True\n"
+            ">>> triples_sum_to_zero([1, 2, 3, 7])\n"
+            "False\n"
+            ">>> triples_sum_to_zero([2, 4, -5, 3, 9, 7])\n"
+            "True"
+        ),
+        "before": "from typing import List\n\ndef triples_sum_to_zero(l: List[int]) -> bool:\n    pass",
+        "tests": [
+            ("triples_sum_to_zero([1, 3, 5, 0])", False),
+            ("triples_sum_to_zero([1, 3, -2, 1])", True),
+            ("triples_sum_to_zero([1, 2, 3, 7])", False),
+            ("triples_sum_to_zero([2, 4, -5, 3, 9, 7])", True),
+            ("triples_sum_to_zero([1])", False),
+        ],
+    },
+    # HumanEval/43
+    {
+        "he_id": 43,
+        "name": "pairs_sum_to_zero",
+        "description": (
+            "pairs_sum_to_zero takes a list of integers as an input.\n"
+            "it returns True if there are two distinct elements in the list that sum to zero, and False otherwise.\n"
+            ">>> pairs_sum_to_zero([1, 3, 5, 0])\n"
+            "False\n"
+            ">>> pairs_sum_to_zero([1, 3, -2, 1])\n"
+            "False\n"
+            ">>> pairs_sum_to_zero([1, 2, 3, 7])\n"
+            "False\n"
+            ">>> pairs_sum_to_zero([2, 4, -5, 3, 5, 7])\n"
+            "True"
+        ),
+        "before": "from typing import List\n\ndef pairs_sum_to_zero(l: List[int]) -> bool:\n    pass",
+        "tests": [
+            ("pairs_sum_to_zero([1, 3, 5, 0])", False),
+            ("pairs_sum_to_zero([1, 3, -2, 1])", False),
+            ("pairs_sum_to_zero([1, 2, 3, 7])", False),
+            ("pairs_sum_to_zero([2, 4, -5, 3, 5, 7])", True),
+            ("pairs_sum_to_zero([1])", False),
+        ],
+    },
+    # HumanEval/44
+    {
+        "he_id": 44,
+        "name": "change_base",
+        "description": (
+            "Change numerical base of input number x to base.\n"
+            "return string representation after the conversion.\n"
+            "base numbers are less than 10.\n"
+            ">>> change_base(8, 3)\n"
+            "'22'\n"
+            ">>> change_base(8, 2)\n"
+            "'1000'\n"
+            ">>> change_base(7, 2)\n"
+            "'111'"
+        ),
+        "before": "def change_base(x: int, base: int) -> str:\n    pass",
+        "tests": [
+            ("change_base(8, 3)", '22'),
+            ("change_base(8, 2)", '1000'),
+            ("change_base(7, 2)", '111'),
+            ("change_base(234, 2)", '11101010'),
+            ("change_base(16, 2)", '10000'),
+            ("change_base(8, 8)", '10'),
+            ("change_base(0, 5)", '0'),
+        ],
+    },
+    # HumanEval/46
+    {
+        "he_id": 46,
+        "name": "fib4",
+        "description": (
+            "The Fib4 number sequence is a sequence similar to the Fibonacci sequence that's defined as follows:\n"
+            "fib4(0) -> 0\n"
+            "fib4(1) -> 0\n"
+            "fib4(2) -> 2\n"
+            "fib4(3) -> 0\n"
+            "fib4(n) -> fib4(n-1) + fib4(n-2) + fib4(n-3) + fib4(n-4)\n"
+            "Please write a function to efficiently compute the n-th element of the fib4 number sequence. Do not use recursion.\n"
+            ">>> fib4(5)\n"
+            "4\n"
+            ">>> fib4(6)\n"
+            "8\n"
+            ">>> fib4(7)\n"
+            "14"
+        ),
+        "before": "def fib4(n: int) -> int:\n    pass",
+        "tests": [
+            ("fib4(5)", 4),
+            ("fib4(6)", 8),
+            ("fib4(7)", 14),
+            ("fib4(8)", 28),
+            ("fib4(10)", 104),
+        ],
+    },
+    # HumanEval/47
+    {
+        "he_id": 47,
+        "name": "median",
+        "description": (
+            "Return median of elements in the list l.\n"
+            ">>> median([3, 1, 2, 4, 5])\n"
+            "3\n"
+            ">>> median([-10, 4, 6, 1000, 10, 20])\n"
+            "15.0"
+        ),
+        "before": "from typing import List, Union\n\ndef median(l: List[int]) -> Union[int, float]:\n    pass",
+        "tests": [
+            ("median([3, 1, 2, 4, 5])", 3),
+            ("median([-10, 4, 6, 1000, 10, 20])", 15.0),
+            ("median([5])", 5),
+            ("median([6, 5])", 5.5),
+            ("median([8, 1, 3, 9, 9, 2, 7])", 7),
+        ],
+    },
+    # HumanEval/49
+    {
+        "he_id": 49,
+        "name": "modp",
+        "description": (
+            "Return 2^n modulo p (be aware of numerics).\n"
+            ">>> modp(3, 5)\n"
+            "3\n"
+            ">>> modp(1101, 101)\n"
+            "2\n"
+            ">>> modp(0, 101)\n"
+            "1\n"
+            ">>> modp(3, 11)\n"
+            "8\n"
+            ">>> modp(100, 101)\n"
+            "1"
+        ),
+        "before": "def modp(n: int, p: int) -> int:\n    pass",
+        "tests": [
+            ("modp(3, 5)", 3),
+            ("modp(1101, 101)", 2),
+            ("modp(0, 101)", 1),
+            ("modp(3, 11)", 8),
+            ("modp(100, 101)", 1),
+        ],
+    },
+    # HumanEval/59
+    {
+        "he_id": 59,
+        "name": "largest_prime_factor",
+        "description": (
+            "Return the largest prime factor of n. Assume n > 1 and is not a prime.\n"
+            ">>> largest_prime_factor(13195)\n"
+            "29\n"
+            ">>> largest_prime_factor(2048)\n"
+            "2"
+        ),
+        "before": "def largest_prime_factor(n: int) -> int:\n    pass",
+        "tests": [
+            ("largest_prime_factor(15)", 5),
+            ("largest_prime_factor(13195)", 29),
+            ("largest_prime_factor(2048)", 2),
+            ("largest_prime_factor(6)", 3),
+            ("largest_prime_factor(49)", 7),
+        ],
+    },
+    # HumanEval/62
+    {
+        "he_id": 62,
+        "name": "derivative",
+        "description": (
+            "xs represent coefficients of a polynomial.\n"
+            "xs[0] + xs[1] * x + xs[2] * x^2 + ....\n"
+            "Return derivative of this polynomial in the same form.\n"
+            ">>> derivative([3, 1, 2, 4, 5])\n"
+            "[1, 4, 12, 20]\n"
+            ">>> derivative([1, 2, 3])\n"
+            "[2, 6]"
+        ),
+        "before": "from typing import List\n\ndef derivative(xs: List[int]) -> List[int]:\n    pass",
+        "tests": [
+            ("derivative([3, 1, 2, 4, 5])", [1, 4, 12, 20]),
+            ("derivative([1, 2, 3])", [2, 6]),
+            ("derivative([3, 1])", [1]),
+            ("derivative([3])", []),
+        ],
+    },
+    # HumanEval/63
+    {
+        "he_id": 63,
+        "name": "fibfib",
+        "description": (
+            "The FibFib number sequence is a sequence similar to the Fibonacci sequence that's defined as follows:\n"
+            "fibfib(0) == 0\n"
+            "fibfib(1) == 0\n"
+            "fibfib(2) == 1\n"
+            "fibfib(n) == fibfib(n-1) + fibfib(n-2) + fibfib(n-3).\n"
+            "Please write a function to efficiently compute the n-th element of the fibfib number sequence.\n"
+            ">>> fibfib(1)\n"
+            "0\n"
+            ">>> fibfib(5)\n"
+            "4\n"
+            ">>> fibfib(8)\n"
+            "24"
+        ),
+        "before": "def fibfib(n: int) -> int:\n    pass",
+        "tests": [
+            ("fibfib(2)", 1),
+            ("fibfib(1)", 0),
+            ("fibfib(5)", 4),
+            ("fibfib(8)", 24),
+            ("fibfib(10)", 81),
+        ],
+    },
+    # HumanEval/69
+    {
+        "he_id": 69,
+        "name": "search",
+        "description": (
+            "You are given a non-empty list of positive integers. Return the greatest integer that is greater than\n"
+            "zero, and has a frequency greater than or equal to the value of the integer itself.\n"
+            "The frequency of an integer is the number of times it appears in the list.\n"
+            "If no such a value exist, return -1.\n"
+            ">>> search([4, 1, 2, 2, 3, 1])\n"
+            "2\n"
+            ">>> search([1, 2, 2, 3, 3, 3, 4, 4, 4])\n"
+            "3\n"
+            ">>> search([5, 5, 4, 4, 4])\n"
+            "-1"
+        ),
+        "before": "from typing import List\n\ndef search(lst: List[int]) -> int:\n    pass",
+        "tests": [
+            ("search([4, 1, 2, 2, 3, 1])", 2),
+            ("search([1, 2, 2, 3, 3, 3, 4, 4, 4])", 3),
+            ("search([5, 5, 4, 4, 4])", -1),
+            ("search([2, 3, 3, 2, 2])", 2),
+            ("search([1])", 1),
+        ],
+    },
+    # HumanEval/72
+    {
+        "he_id": 72,
+        "name": "will_it_fly",
+        "description": (
+            "Write a function that returns True if the object q will fly, and False otherwise.\n"
+            "The object q will fly if it's balanced (it is a palindromic list) and the sum of its elements is\n"
+            "less than or equal the maximum possible weight w.\n"
+            ">>> will_it_fly([1, 2], 5)\n"
+            "False\n"
+            ">>> will_it_fly([3, 2, 3], 1)\n"
+            "False\n"
+            ">>> will_it_fly([3, 2, 3], 9)\n"
+            "True\n"
+            ">>> will_it_fly([3], 5)\n"
+            "True"
+        ),
+        "before": "from typing import List\n\ndef will_it_fly(q: List[int], w: int) -> bool:\n    pass",
+        "tests": [
+            ("will_it_fly([1, 2], 5)", False),
+            ("will_it_fly([3, 2, 3], 1)", False),
+            ("will_it_fly([3, 2, 3], 9)", True),
+            ("will_it_fly([3], 5)", True),
+            ("will_it_fly([3, 2, 3], 8)", True),
+        ],
+    },
+    # HumanEval/75
+    {
+        "he_id": 75,
+        "name": "is_multiply_prime",
+        "description": (
+            "Write a function that returns true if the given number is the multiplication of 3 prime numbers\n"
+            "and false otherwise.\n"
+            "Knowing that (a) is less then 100.\n"
+            ">>> is_multiply_prime(30)\n"
+            "True\n"
+            "30 = 2 * 3 * 5"
+        ),
+        "before": "def is_multiply_prime(a: int) -> bool:\n    pass",
+        "tests": [
+            ("is_multiply_prime(5)", False),
+            ("is_multiply_prime(30)", True),
+            ("is_multiply_prime(8)", True),
+            ("is_multiply_prime(10)", False),
+            ("is_multiply_prime(27)", True),
+            ("is_multiply_prime(66)", False),
+        ],
+    },
+    # HumanEval/77
+    {
+        "he_id": 77,
+        "name": "iscube",
+        "description": (
+            "Write a function that takes an integer a and returns True if this integer is a cube of some integer number.\n"
+            "Note: you may assume the input is always valid.\n"
+            ">>> iscube(1)\n"
+            "True\n"
+            ">>> iscube(2)\n"
+            "False\n"
+            ">>> iscube(-1)\n"
+            "True\n"
+            ">>> iscube(64)\n"
+            "True\n"
+            ">>> iscube(0)\n"
+            "True\n"
+            ">>> iscube(180)\n"
+            "False"
+        ),
+        "before": "def iscube(a: int) -> bool:\n    pass",
+        "tests": [
+            ("iscube(1)", True),
+            ("iscube(2)", False),
+            ("iscube(-1)", True),
+            ("iscube(64)", True),
+            ("iscube(0)", True),
+            ("iscube(180)", False),
+            ("iscube(-8)", True),
+        ],
+    },
+    # HumanEval/80
+    {
+        "he_id": 80,
+        "name": "is_happy",
+        "description": (
+            "You are given a string s.\n"
+            "Your task is to check if the string is happy or not.\n"
+            "A string is happy if its length is at least 3 and every 3 consecutive letters are distinct.\n"
+            ">>> is_happy('a')\n"
+            "False\n"
+            ">>> is_happy('aa')\n"
+            "False\n"
+            ">>> is_happy('abcd')\n"
+            "True\n"
+            ">>> is_happy('aabb')\n"
+            "False\n"
+            ">>> is_happy('adb')\n"
+            "True\n"
+            ">>> is_happy('xyy')\n"
+            "False"
+        ),
+        "before": "def is_happy(s: str) -> bool:\n    pass",
+        "tests": [
+            ("is_happy('a')", False),
+            ("is_happy('aa')", False),
+            ("is_happy('abcd')", True),
+            ("is_happy('aabb')", False),
+            ("is_happy('adb')", True),
+            ("is_happy('xyy')", False),
+            ("is_happy('iopaxpoi')", True),
+        ],
+    },
 ]
 
 
@@ -634,5 +1124,5 @@ def run_humaneval_tests(after_code: str, task: dict) -> dict:
 
 
 def run_all_humaneval() -> list[dict]:
-    """全30問を問題文のみで（LLM無し）ダミー実行用。実際はrun_benchmark.pyから呼ぶ。"""
+    """全50問を問題文のみで（LLM無し）ダミー実行用。実際はrun_benchmark.pyから呼ぶ。"""
     return HUMANEVAL_TASKS
