@@ -55,18 +55,20 @@ class Sandbox:
 
     def git_init(self) -> str:
         """作業ディレクトリをgit初期化"""
-        subprocess.run(["git", "init"], cwd=self.work_dir, capture_output=True)
-        subprocess.run(["git", "config", "user.email", "sdnd@local"], cwd=self.work_dir, capture_output=True)
-        subprocess.run(["git", "config", "user.name", "SDND-Dev"], cwd=self.work_dir, capture_output=True)
+        subprocess.run(["git", "init"], cwd=self.work_dir, capture_output=True, encoding="utf-8", errors="replace")
+        subprocess.run(["git", "config", "user.email", "sdnd@local"], cwd=self.work_dir, capture_output=True, encoding="utf-8", errors="replace")
+        subprocess.run(["git", "config", "user.name", "SDND-Dev"], cwd=self.work_dir, capture_output=True, encoding="utf-8", errors="replace")
         return str(self.work_dir)
 
     def git_commit(self, message: str) -> dict:
         """変更をコミット"""
-        subprocess.run(["git", "add", "."], cwd=self.work_dir, capture_output=True)
+        subprocess.run(["git", "add", "."], cwd=self.work_dir, capture_output=True, encoding="utf-8", errors="replace")
         result = subprocess.run(
             ["git", "commit", "-m", message],
             cwd=self.work_dir,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
         )
         return {"success": result.returncode == 0, "output": result.stdout}
