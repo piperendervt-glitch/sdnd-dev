@@ -61,6 +61,16 @@ HumanEval easy〜medium問題 16問で評価。
 
 **備考**: 例示なし（純粋sdnd-dev）で87.5%は、3Bモデルとしてはかなり高いスコアです。一般的な3BモデルのHumanEval pass@1は20〜40%台が標準です。
 
+### HumanEval公式測定（純粋実力・例示なし）
+
+| 指標 | 値 |
+|------|-----|
+| 対象 | HumanEval公式 easy〜medium 29問 |
+| pass@1 | 86.2%（25/29） |
+| 失敗問題 | HE/0 has_close_elements 他 |
+| 測定日 | 2026年3月6日 |
+| 備考 | task_pool.json非連携・純粋実力測定専用 |
+
 #### HumanEval-Pure 詳細（例示なし純粋版）
 
 | ID | タスク | スコア | テスト通過 |
