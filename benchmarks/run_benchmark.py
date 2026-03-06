@@ -24,6 +24,7 @@ if sys.stdout.encoding != "utf-8":
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from benchmarks.minimal_benchmark import TASKS, get_task, score_before, score_after
+from benchmarks.humaneval_official import HUMANEVAL_TASKS, run_humaneval_tests
 from sdnd_dev.agents import Agent, DEFAULT_MODEL
 
 LOG_DIR = Path("sessions/benchmark_logs")
@@ -125,6 +126,87 @@ def run_repeated(task_id: int, repeat: int, model: str = DEFAULT_MODEL) -> list[
     return all_results
 
 
+def run_humaneval_benchmark(model: str = DEFAULT_MODEL) -> list:
+    """HumanEval公式30問を実行してpass@1を計測"""
+    print(f"\n{'='*60}")
+    print(f"HumanEval Official Benchmark (30 problems)")
+    print(f"Model: {model}")
+    print(f"{'='*60}")
+
+    results = []
+    total_passed = 0
+    total_problems = 0
+
+    for task in HUMANEVAL_TASKS:
+        total_problems += 1
+        print(f"\n--- HE/{task['he_id']}: {task['name']} ---")
+
+        # LLMに問題を解かせる
+        implementer = Agent("implementer", model=model)
+        prompt = (
+            f"Implement the following Python function correctly.\n\n"
+            f"Problem:\n{task['description']}\n\n"
+            f"Function template:\n"
+            f"```python\n{task['before']}\n```\n\n"
+            f"Rules:\n"
+            f"- Do NOT change the function name or parameters\n"
+            f"- Output ONLY the complete code in a python code block\n"
+            f"- Include any necessary imports\n"
+            f"- No explanation, just code\n"
+        )
+        messages = [{"role": "user", "content": prompt}]
+        start = time.time()
+        response = implementer.respond(messages, task_type="humaneval")
+        elapsed = time.time() - start
+
+        # コード抽出
+        match = re.search(r"```python\n(.*?)```", response, re.DOTALL)
+        after_code = match.group(1).strip() if match else response.strip()
+
+        # テスト実行
+        test_result = run_humaneval_tests(after_code, task)
+        passed = test_result["passed"]
+        total = test_result["total"]
+        is_pass = (passed == total)
+
+        if is_pass:
+            total_passed += 1
+
+        status = "PASS" if is_pass else "FAIL"
+        print(f"  [{status}] {passed}/{total} tests ({elapsed:.1f}s)")
+        if test_result.get("error"):
+            print(f"  Error: {test_result['error']}")
+
+        results.append({
+            "he_id": task["he_id"],
+            "name": task["name"],
+            "passed_tests": passed,
+            "total_tests": total,
+            "is_pass": is_pass,
+            "elapsed_sec": round(elapsed, 1),
+            "after_code": after_code,
+            "error": test_result.get("error"),
+        })
+
+    # サマリー
+    pass_rate = total_passed / total_problems if total_problems > 0 else 0
+    print(f"\n{'='*60}")
+    print(f"HumanEval Results: {total_passed}/{total_problems} passed")
+    print(f"pass@1 = {pass_rate:.1%}")
+    print(f"{'='*60}")
+
+    # 問題別結果テーブル
+    print(f"\n{'HE#':>4} {'Name':<30} {'Tests':>8} {'Status':>8}")
+    print("-" * 54)
+    for r in results:
+        status = "PASS" if r["is_pass"] else "FAIL"
+        print(f"{r['he_id']:>4} {r['name']:<30} {r['passed_tests']}/{r['total_tests']:>5} {status:>8}")
+    print("-" * 54)
+    print(f"{'':>4} {'TOTAL':<30} {total_passed}/{total_problems:>5} {pass_rate:.1%}")
+
+    return results
+
+
 def save_log(results: list):
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     path = LOG_DIR / f"{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
@@ -136,11 +218,15 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--task", type=int, nargs="+", help="タスクID (1-51、複数指定可)")
     parser.add_argument("--all", action="store_true", help="全タスク実行")
+    parser.add_argument("--humaneval", action="store_true", help="HumanEval公式30問ベンチマーク実行")
     parser.add_argument("--repeat", type=int, default=1, help="同一タスクの繰り返し回数")
     parser.add_argument("--model", type=str, default=DEFAULT_MODEL, help=f"Ollamaモデル名 (default: {DEFAULT_MODEL})")
     args = parser.parse_args()
 
-    if args.all:
+    if args.humaneval:
+        results = run_humaneval_benchmark(model=args.model)
+        save_log(results)
+    elif args.all:
         if args.repeat > 1:
             all_cycle_results = []
             for cycle in range(1, args.repeat + 1):
